@@ -7,7 +7,6 @@ export class RegisterDto{
     nombre_usuario: string;
 
     @Transform(({value})=>value.trim())
-
     @IsString()
     @MinLength(6)
     contrasena: string;
