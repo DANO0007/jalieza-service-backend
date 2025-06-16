@@ -14,10 +14,15 @@ export class UsersService {
 
   }
    async create(createUserDto: CreateUserDto) {
-   const User=this.UserRepository.create(createUserDto);
-   return await this.UserRepository.save(User);
+  // const User=this.UserRepository.create(createUserDto);
+  // return await this.UserRepository.save(User);
+  return this.UserRepository.save(createUserDto);
   }
 
+  findOneByName(nombre_usuario: string){
+    return this.UserRepository.findOneBy({nombre_usuario})
+
+  }
    async findAll() {
     return await this.UserRepository.find();
   }
