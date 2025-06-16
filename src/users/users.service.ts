@@ -27,10 +27,10 @@ export class UsersService {
   }
 
    async update(id: number, updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
+    return await this.UserRepository.update(id,updateUserDto)
   }
 
    async remove(id: number) {
-   return await this.UserRepository.softDelete({id});
+   return await this.UserRepository.softDelete({id}); 
   }
 }

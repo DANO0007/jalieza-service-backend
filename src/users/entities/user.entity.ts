@@ -6,10 +6,10 @@ export class User {
     @Column({primary:true, generated: true})
     id:number;
 
-    @Column()
+    @Column({nullable:false})
     nombre_usuario: string;
 
-    @Column()
+    @Column({nullable:false})
     contrasena: string;
 
     @Column()
