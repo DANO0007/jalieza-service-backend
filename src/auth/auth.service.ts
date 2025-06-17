@@ -29,11 +29,17 @@ export class AuthService {
          if(!user){
             throw new UnauthorizedException('El nombre no coincide')
          }
-      const isPasswordValid=await bcryptjs.compare(contrasena,user.contrasena);
+          const isPasswordValid=await bcryptjs.compare(contrasena,user.contrasena);
       if(!isPasswordValid){
         throw new UnauthorizedException('contraseña incorrecta');
       }
 
+
+         if (!user.activo) {
+            throw new UnauthorizedException('El usuario está inactivo');
+          }
+
+     
       const payload ={nombre_usuario: user.nombre_usuario}
       const  token  = await this.jwtService.signAsync(payload);
       return {
