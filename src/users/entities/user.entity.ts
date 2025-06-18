@@ -6,7 +6,7 @@ export class Usuarios {
     @Column({primary:true, generated: true})
     id:number;
 
-    @Column( {unique:true, nullable:false})
+    @Column( { nullable:false})
     usuario: string;
 
     @Column( {unique:true, nullable:false})
