@@ -19,23 +19,23 @@ export class UsersService {
   return this.UserRepository.save(createUserDto);
   }
 
-  findOneByName(nombre_usuario: string){
-    return this.UserRepository.findOneBy({nombre_usuario})
+  findOneByName(email: string){
+    return this.UserRepository.findOneBy({email})
 
   }
    async findAll() {
     return await this.UserRepository.find();
   }
 
-   async findOne(id_usuario: number) {
-    return await this.UserRepository.findOneBy({id_usuario})
+   async findOne(id: number) {
+    return await this.UserRepository.findOneBy({id})
   }
 
-   async update(id_usuario: number, updateUserDto: UpdateUserDto) {
-    return await this.UserRepository.update(id_usuario,updateUserDto)
+   async update(id: number, updateUserDto: UpdateUserDto) {
+    return await this.UserRepository.update(id,updateUserDto)
   }
 
-   async remove(id_usuario: number) {
-   return await this.UserRepository.softDelete({id_usuario}); 
+   async remove(id: number) {
+   return await this.UserRepository.softDelete({id}); 
   }
 }

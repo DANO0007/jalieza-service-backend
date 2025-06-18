@@ -12,22 +12,23 @@ export class AuthService {
         private readonly jwtService:JwtService,
     ){}
 
-     async register({nombre_usuario,contrasena,id_rol,activo}:RegisterDto){
-        const user = await this.usersService.findOneByName(nombre_usuario)
+     async register({usuario,email,contrasena,rol_id}:RegisterDto){
+        const user = await this.usersService.findOneByName(usuario)
         if(user){
             throw new BadRequestException(' ese usuario ya existe')
         }
         return  await this.usersService.create({
-            nombre_usuario,
+            usuario,
+            email,
             contrasena: await bcryptjs.hash(contrasena,10), 
-            id_rol,
-            activo});
+            rol_id,
+            });
         
     }
-    async login({nombre_usuario,contrasena}:LoginDto){
-         const user = await this.usersService.findOneByName(nombre_usuario)
+    async login({email,contrasena}:LoginDto){
+         const user = await this.usersService.findOneByName(email)
          if(!user){
-            throw new UnauthorizedException('El nombre no coincide')
+            throw new UnauthorizedException('El email no coincide')
          }
           const isPasswordValid=await bcryptjs.compare(contrasena,user.contrasena);
       if(!isPasswordValid){
@@ -35,16 +36,13 @@ export class AuthService {
       }
 
 
-         if (!user.activo) {
-            throw new UnauthorizedException('El usuario está inactivo');
-          }
 
      
-      const payload ={nombre_usuario: user.nombre_usuario}
+      const payload ={email: user.email}
       const  token  = await this.jwtService.signAsync(payload);
       return {
         token,
-        nombre_usuario
+        email
       };
     }
 }
