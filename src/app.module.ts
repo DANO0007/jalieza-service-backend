@@ -8,6 +8,7 @@ import { AuthService } from './auth/auth.service';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { CiudadanosModule } from './ciudadanos/ciudadanos.module';
+import { ServiciosCiudadanosModule } from './servicios_ciudadanos/servicios_ciudadanos.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { CiudadanosModule } from './ciudadanos/ciudadanos.module';
     AuthModule,
     UsersModule,
     CiudadanosModule,
+    ServiciosCiudadanosModule,
   ],
   controllers: [AppController, AuthController],
   providers: [AppService, AuthService],

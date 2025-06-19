@@ -1,4 +1,5 @@
-import { Column, CreateDateColumn, DeleteDateColumn, Entity, UpdateDateColumn } from "typeorm";
+import { ServiciosCiudadano } from "src/servicios_ciudadanos/entities/servicios_ciudadano.entity";
+import { Column, CreateDateColumn, DeleteDateColumn, Entity, OneToMany, UpdateDateColumn } from "typeorm";
 
 @Entity()
 export class Ciudadanos {
@@ -34,7 +35,6 @@ export class Ciudadanos {
     
     @DeleteDateColumn()
     deleted_at: Date;
-
 
 
 
