@@ -17,9 +17,6 @@ export class Ciudadanos {
     @Column({ type: 'date', nullable: false })
     fecha_nacimiento:Date;
 
-    @Column()
-    genero:string;
-
     @Column( { nullable:false})
     telefono:string;
     
