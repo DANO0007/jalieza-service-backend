@@ -9,6 +9,9 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { CiudadanosModule } from './ciudadanos/ciudadanos.module';
 import { ServiciosCiudadanosModule } from './servicios_ciudadanos/servicios_ciudadanos.module';
+import { CatalogoServiciosModule } from './catalogo_servicios/catalogo_servicios.module';
+import { CatalogoOrdenModule } from './catalogo_orden/catalogo_orden.module';
+import { RolModule } from './rol/rol.module';
 
 @Module({
   imports: [
@@ -32,6 +35,9 @@ import { ServiciosCiudadanosModule } from './servicios_ciudadanos/servicios_ciud
     UsersModule,
     CiudadanosModule,
     ServiciosCiudadanosModule,
+    CatalogoServiciosModule,
+    CatalogoOrdenModule,
+    RolModule,
   ],
   controllers: [AppController, AuthController],
   providers: [AppService, AuthService],

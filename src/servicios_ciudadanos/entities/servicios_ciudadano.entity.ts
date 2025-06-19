@@ -14,7 +14,6 @@ export class ServiciosCiudadano {
     @Column({primary:true, generated: true})
     id:number;
 
-
     @Column( { nullable:false})
     servicio_id:number;
 
