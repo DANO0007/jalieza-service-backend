@@ -1,5 +1,5 @@
-import { Column, CreateDateColumn, DeleteDateColumn, Entity, UpdateDateColumn } from "typeorm";
-
+import { Column, CreateDateColumn, DeleteDateColumn, Entity, JoinColumn, ManyToOne, UpdateDateColumn } from "typeorm";
+import {CatalogoOrden} from './../../catalogo_orden/entities/catalogo_orden.entity'
 @Entity()
 export class CatalogoServicio {
     @Column({primary:true, generated: true})
@@ -8,9 +8,9 @@ export class CatalogoServicio {
     @Column( { nullable:false})
     nombre_servicio:string;
 
-    @Column( { nullable:false})
-    orden_id: number;
-
+   @ManyToOne(() => CatalogoOrden, orden => orden.servicios, { onDelete: 'SET NULL', eager: true })
+  @JoinColumn({ name: 'orden_id' })
+  orden: CatalogoOrden;
     @Column( { nullable:false})
     descripcion:string;
 

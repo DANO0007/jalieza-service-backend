@@ -14,6 +14,11 @@ export class ServiciosCiudadano {
     @Column({primary:true, generated: true})
     id:number;
 
+      // ✅ Aquí haces la relación y defines cómo se llama la FK
+  @ManyToOne(() => Ciudadanos, ciudadano => ciudadano.servicios, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'ciudadano_id' })  // Esta será la columna FK en la base de datos
+  ciudadano: Ciudadanos;
+  
     @Column( { nullable:false})
     servicio_id:number;
 

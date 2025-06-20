@@ -1,8 +1,8 @@
-import { Column, CreateDateColumn, DeleteDateColumn, Entity, UpdateDateColumn } from "typeorm";
-
+import { Column, CreateDateColumn, DeleteDateColumn, Entity, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import {Usuarios} from './../../users/entities/user.entity'
 @Entity()
 export class Rol {
-    @Column({primary:true, generated: true})
+    @PrimaryGeneratedColumn()
     id:number;
 
     @Column( { nullable:false})
@@ -16,4 +16,7 @@ export class Rol {
         
     @DeleteDateColumn()
     deleted_at: Date;
+
+    @OneToMany(() => Usuarios, usuario => usuario.rol)
+  usuarios: Usuarios[];
 }

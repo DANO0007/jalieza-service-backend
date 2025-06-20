@@ -1,9 +1,9 @@
-import {Column, CreateDateColumn, DeleteDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn} from "typeorm";
-
+import {Column, CreateDateColumn, DeleteDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn} from "typeorm";
+import {Rol} from './../../rol/entities/rol.entity'
 @Entity()
 export class Usuarios {
     //@PrimaryGeneratedColumn()
-    @Column({primary:true, generated: true})
+   @PrimaryGeneratedColumn()
     id:number;
 
     @Column( { nullable:false})
@@ -15,8 +15,10 @@ export class Usuarios {
     @Column({nullable:false})
     contrasena: string;
 
-    @Column()
-    rol_id: number;
+ // ✅ Relación con la tabla roles
+    @ManyToOne(() => Rol, rol => rol.usuarios, { eager: true, onDelete: 'SET NULL',nullable: true })
+    @JoinColumn({ name: 'rol_id' }) // Nombre explícito de la columna FK
+    rol: Rol;
 
    @CreateDateColumn()
     created_at: Date;
