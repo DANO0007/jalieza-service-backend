@@ -1,37 +1,35 @@
 import { Transform, Type } from "class-transformer";
-import { IsBoolean, IsDate, IsNumber, IsString } from "class-validator";
+import { IsBoolean, IsDate, IsNumber, IsOptional, IsString } from "class-validator";
 
 export class CreateCiudadanoDto {
-    @Transform(({value})=>value.trim())
-    @IsString()
-    nombre:string;
+  @Transform(({ value }) => value.trim())
+  @IsString()
+  name: string;
 
-    @Transform(({value})=>value.trim())
-    @IsString()
-    apellido_paterno:string;
+  @Transform(({ value }) => value.trim())
+  @IsString()
+  last_name_father: string;
 
-    @Transform(({value})=>value.trim())
-    @IsString()
-    apellido_materno:string;
+  @Transform(({ value }) => value.trim())
+  @IsString()
+  last_name_mother: string;
 
-    @Type(() => Date)
-    @IsDate()
-    fecha_nacimiento:Date;
+  @Type(() => Date)
+  @IsDate()
+  birth_date: Date;
 
-    @Transform(({value})=>value.trim())
-    @IsString()
-    genero:string;
+  @Transform(({ value }) => value.trim())
+  @IsString()
+  gender: string;
 
-    @Transform(({value})=>value.trim())
-    @IsString()
-    telefono:string;
-    
-    @IsBoolean()
-    estado_civil: boolean;
+  @Transform(({ value }) => value.trim())
+  @IsString()
+  phone: string;
 
-    @IsNumber()
-    pareja_id: number;
+  @IsBoolean()
+  marital_status: boolean;
 
-
-
+  @IsOptional()
+  @IsNumber()
+  partner: number; // Puedes dejarlo como partner_id si usas solo el ID
 }

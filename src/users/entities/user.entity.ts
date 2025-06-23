@@ -1,33 +1,44 @@
-import {Column, CreateDateColumn, DeleteDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn} from "typeorm";
-import {Rol} from './../../rol/entities/rol.entity'
+import {
+  Column,
+  CreateDateColumn,
+  DeleteDateColumn,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from "typeorm";
+import { Rol } from './../../rol/entities/rol.entity';
+
 @Entity()
 export class Usuarios {
-    //@PrimaryGeneratedColumn()
-   @PrimaryGeneratedColumn()
-    id:number;
+  @PrimaryGeneratedColumn()
+  id: number;
 
-    @Column( { nullable:false})
-    usuario: string;
+  @Column({ nullable: false })
+  username: string;
 
-    @Column( {unique:true, nullable:false})
-    email: string;
+  @Column({ unique: true, nullable: false })
+  email: string;
 
-    @Column({nullable:false})
-    contrasena: string;
+  @Column({ nullable: false })
+  password: string;
 
- // ✅ Relación con la tabla roles
-    @ManyToOne(() => Rol, rol => rol.usuarios, { eager: true, onDelete: 'SET NULL',nullable: true })
-    @JoinColumn({ name: 'rol_id' }) // Nombre explícito de la columna FK
-    rol: Rol;
+  // ✅ Relationship with roles table
+  @ManyToOne(() => Rol, rol => rol.users, {
+    eager: true,
+    onDelete: 'SET NULL',
+    nullable: true,
+  })
+  @JoinColumn({ name: 'rol_id' })
+  role: Rol;
 
-   @CreateDateColumn()
-    created_at: Date;
+  @CreateDateColumn()
+  created_at: Date;
 
-    @UpdateDateColumn()
-    updated_at: Date;
+  @UpdateDateColumn()
+  updated_at: Date;
 
-    @DeleteDateColumn()
-    deleted_at: Date;
-
-
+  @DeleteDateColumn()
+  deleted_at: Date;
 }

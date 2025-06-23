@@ -1,17 +1,17 @@
-import { Column, Entity, OneToMany } from "typeorm";
-import {CatalogoServicio} from './../../catalogo_servicios/entities/catalogo_servicio.entity'
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import { CatalogoServicio } from './../../catalogo_servicios/entities/catalogo_servicio.entity';
 
 @Entity()
 export class CatalogoOrden {
-    @Column({primary:true, generated: true})
-    id:number;
+  @PrimaryGeneratedColumn()
+  id: number;
 
-    @Column({nullable:false})
-    nombre_orden:string;
+  @Column({ nullable: false })
+  order_name: string;
 
-    @Column({nullable:false})
-    puntos_necesarios:number
+  @Column({ nullable: false })
+  required_points: number;
 
-    @OneToMany(() => CatalogoServicio, servicio => servicio.orden)
-    servicios: CatalogoServicio[];
+  @OneToMany(() => CatalogoServicio, servicio => servicio.order)
+  services: CatalogoServicio[];
 }

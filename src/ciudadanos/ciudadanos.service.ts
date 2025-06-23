@@ -9,53 +9,65 @@ import { Repository } from 'typeorm';
 export class CiudadanosService {
   constructor(
     @InjectRepository(Ciudadanos)
-    private readonly ciudadanosRepository: Repository<Ciudadanos>, // 👈 Ya puedes usarlo
+    private readonly ciudadanosRepository: Repository<Ciudadanos>,
   ) {}
 
   create(createCiudadanoDto: CreateCiudadanoDto) {
     return 'This action adds a new ciudadano';
   }
 
-     async register({
-  nombre,
-  apellido_paterno,
-  apellido_materno,
-  fecha_nacimiento,
-  genero,
-  telefono,
-  estado_civil,
-  pareja_id
-}: CreateCiudadanoDto) {
+  async register(dto: CreateCiudadanoDto) {
+  const {
+    name,
+    last_name_father,
+    last_name_mother,
+    birth_date,
+    phone,
+    marital_status,
+    partner: partnerId,
+  } = dto;
+
+  let partnerEntity: Ciudadanos = null;
+
+  if (partnerId) {
+    partnerEntity = await this.ciudadanosRepository.findOneBy({ id: partnerId });
+    if (!partnerEntity) {
+      throw new BadRequestException(`Partner with id ${partnerId} not found`);
+    }
+  }
+
   return await this.ciudadanosRepository.save({
-    nombre,
-    apellido_paterno,
-    apellido_materno,
-    fecha_nacimiento,
-    genero,
-    telefono,
-    estado_civil,
-    pareja_id
+    name,
+    last_name_father,
+    last_name_mother,
+    birth_date,
+    phone,
+    marital_status,
+    partner: partnerEntity,
   });
 }
 
- async findAll() {
+
+  async findAll() {
     return await this.ciudadanosRepository.find();
   }
 
   async findOne(id: number) {
     const ciudadano = await this.ciudadanosRepository.findOneBy({ id });
-    if (!ciudadano) throw new NotFoundException(`Ciudadano con id ${id} no encontrado`);
+    if (!ciudadano) {
+      throw new NotFoundException(`Citizen with id ${id} not found`);
+    }
     return ciudadano;
   }
 
   async update(id: number, updateCiudadanoDto: UpdateCiudadanoDto) {
-    const ciudadano = await this.findOne(id); // valida que exista
+    const ciudadano = await this.findOne(id);
     Object.assign(ciudadano, updateCiudadanoDto);
     return await this.ciudadanosRepository.save(ciudadano);
   }
 
   async remove(id: number) {
-    const ciudadano = await this.findOne(id); // valida que exista
+    const ciudadano = await this.findOne(id);
     return await this.ciudadanosRepository.remove(ciudadano);
   }
 }

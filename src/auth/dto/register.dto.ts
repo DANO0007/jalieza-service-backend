@@ -1,20 +1,20 @@
 import { Transform } from "class-transformer";
 import { IsBoolean, IsEmail, IsNumber, IsString, MinLength } from "class-validator";
 
-export class RegisterDto{
-    @Transform(({value})=>value.trim())
-    @IsString()
-    usuario: string;
-    
-    @Transform(({value})=>value.trim())
-    @IsEmail()
-    email: string;
+export class RegisterDto {
+  @Transform(({ value }) => value.trim())
+  @IsString()
+  username: string;
 
-    @Transform(({value})=>value.trim())
-    @IsString()
-    @MinLength(6)
-    contrasena: string;
+  @Transform(({ value }) => value.trim())
+  @IsEmail()
+  email: string;
 
-    @IsNumber()
-    rol_id:number;
+  @Transform(({ value }) => value.trim())
+  @IsString()
+  @MinLength(6)
+  password: string;
+
+  @IsNumber()
+  role_id: number;
 }
