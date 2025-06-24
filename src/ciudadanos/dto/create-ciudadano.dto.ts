@@ -20,10 +20,6 @@ export class CreateCiudadanoDto {
 
   @Transform(({ value }) => value.trim())
   @IsString()
-  gender: string;
-
-  @Transform(({ value }) => value.trim())
-  @IsString()
   phone: string;
 
   @IsBoolean()
