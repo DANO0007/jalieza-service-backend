@@ -13,11 +13,19 @@ export class UsersService {
   ){
 
   }
-   async create(createUserDto: CreateUserDto) {
-  // const User=this.UserRepository.create(createUserDto);
-  // return await this.UserRepository.save(User);
-  return this.UserRepository.save(createUserDto);
-  }
+async create(createUserDto: CreateUserDto) {
+  const { username, email, password, role_id } = createUserDto;
+
+  const user = this.UserRepository.create({
+    username,
+    email,
+    password,
+    role: { id: role_id }, // 👈 aquí está la clave
+  });
+
+  return await this.UserRepository.save(user);
+}
+
 
   findOneByName(email: string){
     return this.UserRepository.findOneBy({email})

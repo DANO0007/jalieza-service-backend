@@ -30,7 +30,7 @@ export class Usuarios {
     onDelete: 'SET NULL',
     nullable: true,
   })
-  @JoinColumn({ name: 'rol_id' })
+  @JoinColumn({ name: 'role_id' })
   role: Rol;
 
   @CreateDateColumn()
