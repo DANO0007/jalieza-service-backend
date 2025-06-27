@@ -68,6 +68,6 @@ export class CiudadanosService {
 
   async remove(id: number) {
     const ciudadano = await this.findOne(id);
-    return await this.ciudadanosRepository.remove(ciudadano);
+    return await this.ciudadanosRepository.softRemove(ciudadano);
   }
 }
