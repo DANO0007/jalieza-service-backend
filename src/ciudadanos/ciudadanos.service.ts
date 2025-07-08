@@ -42,7 +42,6 @@ export class CiudadanosService {
     last_name_mother,
     birth_date,
     phone,
-    marital_status,
     partner: partnerEntity,
   });
 }

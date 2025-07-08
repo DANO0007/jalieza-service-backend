@@ -22,8 +22,8 @@ export class CreateCiudadanoDto {
   @IsString()
   phone: string;
 
-  @IsBoolean()
-  marital_status: boolean;
+  @IsString()
+  marital_status: string|null;
 
   @IsOptional()
   @IsNumber()
