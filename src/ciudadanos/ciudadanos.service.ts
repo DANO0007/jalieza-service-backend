@@ -36,14 +36,32 @@ export class CiudadanosService {
     }
   }
 
-  return await this.ciudadanosRepository.save({
-    name,
-    last_name_father,
-    last_name_mother,
-    birth_date,
-    phone,
-    partner: partnerEntity,
-  });
+ const nuevoCiudadano = this.ciudadanosRepository.create({
+  name,
+  last_name_father,
+  last_name_mother,
+  birth_date,
+  phone,
+  marital_status,
+  partner: partnerEntity,
+});
+
+const saved = await this.ciudadanosRepository.save(nuevoCiudadano);
+
+return {
+  message: 'Ciudadano registrado exitosamente',
+  data: {
+    id: saved.id,
+    name: saved.name,
+    last_name_father: saved.last_name_father,
+    last_name_mother: saved.last_name_mother,
+    birth_date: saved.birth_date,
+    phone: saved.phone,
+    marital_status: saved.marital_status,
+    partner: saved.partner?.id || null,
+  },
+};
+
 }
 
 

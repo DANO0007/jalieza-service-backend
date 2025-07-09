@@ -31,7 +31,7 @@ export class Ciudadanos {
   @Column({ nullable: false })
   phone: string;
 
-  @Column({nullable: true})
+  @Column({ type: 'varchar', length: 255, nullable: true })
   marital_status: string;
 
   @ManyToOne(() => Ciudadanos, citizen => citizen.partners, { nullable: true })
