@@ -92,13 +92,18 @@ return {
     }));
   }
 
-  async findOne(id: number) {
-    const ciudadano = await this.ciudadanosRepository.findOneBy({ id });
-    if (!ciudadano) {
-      throw new NotFoundException(`Citizen with id ${id} not found`);
-    }
-    return ciudadano;
+async findOne(id: number) {
+  const ciudadano = await this.ciudadanosRepository.findOne({
+    where: { id },
+    relations: ['services'] // 👈 Aquí indicas que cargue también los cargos
+  });
+
+  if (!ciudadano) {
+    throw new NotFoundException(`Citizen with id ${id} not found`);
   }
+
+  return ciudadano;
+}
 
   async update(id: number, updateCiudadanoDto: UpdateCiudadanoDto) {
     const ciudadano = await this.findOne(id);
