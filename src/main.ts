@@ -1,12 +1,11 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
-
+import * as cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  
   app.setGlobalPrefix("api/v1");
 
   app.useGlobalPipes(
@@ -16,9 +15,14 @@ async function bootstrap() {
       transform: true,
     })
   );
+
+  app.use(cookieParser()); // ✅ Habilita cookies
+
   app.enableCors({
-  origin: ['http://localhost:8100'], // Puerto de Ionic
-});
+    origin: 'http://localhost:8100', // ⚠️ Cambia esto si usas otro frontend
+    credentials: true, // ✅ Permite enviar cookies entre frontend y backend
+  });
+
   await app.listen(process.env.PORT ?? 3000);
 }
 bootstrap();
