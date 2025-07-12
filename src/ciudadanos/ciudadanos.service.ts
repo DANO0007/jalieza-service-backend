@@ -65,32 +65,31 @@ return {
 }
 
   async findAll() {
-    // Traemos ciudadanos activos (no borrados) y cargamos la relación partner
-    const ciudadanos = await this.ciudadanosRepository.find({
-      relations: ['partner'],
-      withDeleted: false,
-    });
+  const ciudadanos = await this.ciudadanosRepository.find({
+    relations: ['partner'],
+    withDeleted: true,
+  });
 
-    // Mapeamos para que el frontend reciba todos los campos necesarios
-    return ciudadanos.map(c => ({
-      id: c.id,
-      name: c.name,
-      last_name_father: c.last_name_father,
-      last_name_mother: c.last_name_mother,
-      birth_date: c.birth_date,
-      phone: c.phone,
-      marital_status: c.marital_status || null,
-      partner: c.partner ? {
-        id: c.partner.id,
-        name: c.partner.name,
-        last_name_father: c.partner.last_name_father,
-        last_name_mother: c.partner.last_name_mother,
-      } : null,
-      visible: true,          // Ajusta según lógica si tienes un campo para visibilidad
-      cargo: null,            // Ajusta si tienes campo cargo o relaciones para esto
-      candidatoACargo: null,  // Igual para candidato a cargo
-    }));
-  }
+  return ciudadanos.map(c => ({
+    id: c.id,
+    name: c.name,
+    last_name_father: c.last_name_father,
+    last_name_mother: c.last_name_mother,
+    birth_date: c.birth_date,
+    phone: c.phone,
+    marital_status: c.marital_status || null,
+    partner: c.partner ? {
+      id: c.partner.id,
+      name: c.partner.name,
+      last_name_father: c.partner.last_name_father,
+      last_name_mother: c.partner.last_name_mother,
+    } : null,
+    visible: !c.deleted_at, // ← Ahora esto refleja si está "activo"
+    cargo: null,
+    candidatoACargo: null,
+  }));
+}
+
 
 async findOne(id: number) {
   const ciudadano = await this.ciudadanosRepository.findOne({
