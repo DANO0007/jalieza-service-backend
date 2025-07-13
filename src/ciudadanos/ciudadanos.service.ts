@@ -64,10 +64,10 @@ return {
 
 }
 
-  async findAll() {
+async findAll() {
   const ciudadanos = await this.ciudadanosRepository.find({
-    relations: ['partner'],
-    withDeleted: true,
+    relations: ['partner', 'services'], // Asegúrate de incluir la relación de cargos
+    withDeleted: false,
   });
 
   return ciudadanos.map(c => ({
@@ -84,9 +84,9 @@ return {
       last_name_father: c.partner.last_name_father,
       last_name_mother: c.partner.last_name_mother,
     } : null,
-    visible: !c.deleted_at, // ← Ahora esto refleja si está "activo"
-    cargo: null,
-    candidatoACargo: null,
+    visible: !c.deleted_at,                      // ✅ ya reflejando estado activo/inactivo
+    cargo: c.services?.length > 0 ? true : false, // ✅ true si tiene cargos
+    candidatoACargo: null // ← ajusta si tienes esta lógica
   }));
 }
 
