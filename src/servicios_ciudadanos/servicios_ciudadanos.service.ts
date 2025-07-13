@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateServiciosCiudadanoDto } from './dto/create-servicios_ciudadano.dto';
 import { UpdateServiciosCiudadanoDto } from './dto/update-servicios_ciudadano.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -44,18 +44,35 @@ export class ServiciosCiudadanosService {
     return `This action returns a #${id} serviciosCiudadano`;
   }
 
-  update(id: number, updateServiciosCiudadanoDto: UpdateServiciosCiudadanoDto) {
-    return `This action updates a #${id} serviciosCiudadano`;
+ async update(id: number, updateDto: UpdateServiciosCiudadanoDto) {
+  const cargo = await this.serviciosRepository.findOne({ where: { id } });
+  if (!cargo) {
+    throw new NotFoundException(`Cargo con id ${id} no encontrado`);
   }
+
+  Object.assign(cargo, {
+    service_id: updateDto.service_id ?? cargo.service_id,
+    start_date: updateDto.start_date ? new Date(updateDto.start_date) : cargo.start_date,
+    end_date: updateDto.end_date ? new Date(updateDto.end_date) : cargo.end_date,
+    termination_status: updateDto.termination_status ?? cargo.termination_status,
+    observations: updateDto.observations ?? cargo.observations,
+  });
+
+  return this.serviciosRepository.save(cargo);
+}
+
 
   remove(id: number) {
     return `This action removes a #${id} serviciosCiudadano`;
   }
+async obtenerCargosPorCiudadano(ciudadanoId: number) {
+  if (isNaN(ciudadanoId)) {
+    throw new BadRequestException(`El ID proporcionado no es válido: ${ciudadanoId}`);
+  }
 
-  async obtenerCargosPorCiudadano(ciudadanoId: number) {
   const ciudadano = await this.ciudadanosRepository.findOne({
     where: { id: ciudadanoId },
-    relations: ['services'], // Asegúrate de que 'services' es el nombre de la relación
+    relations: ['services'],
   });
 
   if (!ciudadano) {
