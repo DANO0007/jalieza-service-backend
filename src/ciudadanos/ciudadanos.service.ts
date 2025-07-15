@@ -114,4 +114,5 @@ async findOne(id: number) {
     const ciudadano = await this.findOne(id);
     return await this.ciudadanosRepository.softRemove(ciudadano);
   }
+  
 }
