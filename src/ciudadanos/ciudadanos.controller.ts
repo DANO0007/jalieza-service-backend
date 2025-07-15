@@ -8,8 +8,8 @@ export class CiudadanosController {
   constructor(private readonly ciudadanosService: CiudadanosService) {}
 
   @Post()
-  create(@Body() createCiudadanoDto: CreateCiudadanoDto) {
-    return this.ciudadanosService.create(createCiudadanoDto);
+ async create(@Body() createCiudadanoDto: CreateCiudadanoDto) {
+    return this.ciudadanosService.register(createCiudadanoDto);
   }
 
   @Post('register')

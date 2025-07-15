@@ -6,7 +6,10 @@ import { UpdateServiciosCiudadanoDto } from './dto/update-servicios_ciudadano.dt
 @Controller('servicios-ciudadanos')
 export class ServiciosCiudadanosController {
   constructor(private readonly serviciosCiudadanosService: ServiciosCiudadanosService) {}
-
+@Get('/ciudadano/:ciudadanoId')
+async getCargosDeCiudadano(@Param('ciudadanoId') ciudadanoId: number) {
+  return this.serviciosCiudadanosService.obtenerCargosPorCiudadano(+ciudadanoId);
+}
 
 
   @Post()

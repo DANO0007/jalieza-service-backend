@@ -13,6 +13,8 @@ import { CatalogoServiciosModule } from './catalogo_servicios/catalogo_servicios
 import { CatalogoOrdenModule } from './catalogo_orden/catalogo_orden.module';
 import { RolModule } from './rol/rol.module';
 
+
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -39,7 +41,7 @@ import { RolModule } from './rol/rol.module';
     CatalogoOrdenModule,
     RolModule,
   ],
-  controllers: [AppController, AuthController],
-  providers: [AppService, AuthService],
+  controllers: [AppController],
+  providers: [AppService],
 })
 export class AppModule {}
