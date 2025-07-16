@@ -1,3 +1,4 @@
+import { CatalogoServicio } from "src/catalogo_servicios/entities/catalogo_servicio.entity";
 import { Ciudadanos } from "src/ciudadanos/entities/ciudadano.entity";
 import {
   Column,
@@ -27,8 +28,9 @@ export class ServiciosCiudadano {
   @JoinColumn({ name: 'ciudadano_id' })
   citizen: Ciudadanos;
 
-  @Column({ nullable: false })
-  service_id: number;
+  @ManyToOne(() => CatalogoServicio, { eager: true }) // Puedes poner eager: true o false
+@JoinColumn({ name: 'service_id' }) // 👈 Usa el mismo nombre que el campo existente
+catalogoServicio: CatalogoServicio;
 
   @Column({ nullable: false })
   start_date: Date;

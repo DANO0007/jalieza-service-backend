@@ -5,6 +5,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { ServiciosCiudadano } from './entities/servicios_ciudadano.entity';
 import { Repository } from 'typeorm';
 import { Ciudadanos } from 'src/ciudadanos/entities/ciudadano.entity';
+import { CatalogoServicio } from 'src/catalogo_servicios/entities/catalogo_servicio.entity';
 
 @Injectable()
 export class ServiciosCiudadanosService {
@@ -14,6 +15,9 @@ export class ServiciosCiudadanosService {
 
     @InjectRepository(Ciudadanos)
     private readonly ciudadanosRepository: Repository<Ciudadanos>,
+
+      @InjectRepository(CatalogoServicio) // 👈 AÑADE ESTO
+  private readonly catalogoServicioRepository: Repository<CatalogoServicio>,
   ) {}
   
    async create(createDto: CreateServiciosCiudadanoDto) {
@@ -26,16 +30,18 @@ export class ServiciosCiudadanosService {
     }
 
     const nuevoServicio = this.serviciosRepository.create({
-      citizen: ciudadano,
-      service_id: createDto.service_id,
-      start_date: new Date(createDto.start_date),
-      end_date: new Date(createDto.end_date),
-      termination_status: createDto.termination_status,
-      observations: createDto.observations || '',
-    });
+  citizen: ciudadano,
+  catalogoServicio: await this.catalogoServicioRepository.findOneBy({ id: createDto.service_id }),
+  start_date: new Date(createDto.start_date),
+  end_date: new Date(createDto.end_date),
+  termination_status: createDto.termination_status,
+  observations: createDto.observations || '',
+});
+
+    
 
     return await this.serviciosRepository.save(nuevoServicio);
-  }s
+  }
   findAll() {
     return `This action returns all serviciosCiudadanos`;
   }
@@ -51,7 +57,7 @@ export class ServiciosCiudadanosService {
   }
 
   Object.assign(cargo, {
-    service_id: updateDto.service_id ?? cargo.service_id,
+    service_id: updateDto.service_id ?? cargo.catalogoServicio,
     start_date: updateDto.start_date ? new Date(updateDto.start_date) : cargo.start_date,
     end_date: updateDto.end_date ? new Date(updateDto.end_date) : cargo.end_date,
     termination_status: updateDto.termination_status ?? cargo.termination_status,
