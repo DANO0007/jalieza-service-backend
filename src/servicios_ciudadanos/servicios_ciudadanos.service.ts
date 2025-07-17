@@ -18,6 +18,8 @@ export class ServiciosCiudadanosService {
 
       @InjectRepository(CatalogoServicio) // 👈 AÑADE ESTO
   private readonly catalogoServicioRepository: Repository<CatalogoServicio>,
+    @InjectRepository(CatalogoServicio)
+  private readonly catalogoServicioRepo: Repository<CatalogoServicio>,
   ) {}
   
    async create(createDto: CreateServiciosCiudadanoDto) {
@@ -50,22 +52,50 @@ export class ServiciosCiudadanosService {
     return `This action returns a #${id} serviciosCiudadano`;
   }
 
- async update(id: number, updateDto: UpdateServiciosCiudadanoDto) {
-  const cargo = await this.serviciosRepository.findOne({ where: { id } });
+async update(id: number, updateDto: UpdateServiciosCiudadanoDto) {
+  const cargo = await this.serviciosRepository.findOne({
+    where: { id },
+    relations: ['catalogoServicio'], // Asegúrate de traer la relación
+  });
+
   if (!cargo) {
     throw new NotFoundException(`Cargo con id ${id} no encontrado`);
   }
 
-  Object.assign(cargo, {
-    service_id: updateDto.service_id ?? cargo.catalogoServicio,
-    start_date: updateDto.start_date ? new Date(updateDto.start_date) : cargo.start_date,
-    end_date: updateDto.end_date ? new Date(updateDto.end_date) : cargo.end_date,
-    termination_status: updateDto.termination_status ?? cargo.termination_status,
-    observations: updateDto.observations ?? cargo.observations,
-  });
+  // ACTUALIZA RELACIÓN CON CatalogoServicio SI CAMBIÓ
+  if (
+    updateDto.service_id &&
+    (!cargo.catalogoServicio || cargo.catalogoServicio.id !== updateDto.service_id)
+  ) {
+    const nuevoServicio = await this.catalogoServicioRepo.findOneBy({
+      id: updateDto.service_id,
+    });
 
-  return this.serviciosRepository.save(cargo);
+    if (!nuevoServicio) {
+      throw new NotFoundException(`Servicio con id ${updateDto.service_id} no encontrado`);
+    }
+
+    cargo.catalogoServicio = nuevoServicio;
+  }
+
+  // Actualiza los otros campos
+  cargo.start_date = updateDto.start_date
+    ? new Date(updateDto.start_date)
+    : cargo.start_date;
+
+  cargo.end_date = updateDto.end_date
+    ? new Date(updateDto.end_date)
+    : cargo.end_date;
+
+  cargo.termination_status =
+    updateDto.termination_status ?? cargo.termination_status;
+
+  cargo.observations = updateDto.observations ?? cargo.observations;
+
+  await this.serviciosRepository.save(cargo);
+  return { message: 'Actualización exitosa' };
 }
+
 
 
   remove(id: number) {
