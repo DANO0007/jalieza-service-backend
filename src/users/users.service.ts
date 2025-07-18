@@ -26,11 +26,13 @@ async create(createUserDto: CreateUserDto) {
   return await this.UserRepository.save(user);
 }
 
+findOneByName(email: string) {
+  return this.UserRepository.findOne({
+    where: { email },
+    relations: ['role'], // 👈 así sí viene user.role.id
+  });
+}
 
-  findOneByName(email: string){
-    return this.UserRepository.findOneBy({email})
-
-  }
    async findAll() {
     return await this.UserRepository.find();
   }

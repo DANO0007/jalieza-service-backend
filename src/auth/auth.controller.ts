@@ -26,20 +26,22 @@ export class AuthController {
   
 
  @Post('login')
-  @HttpCode(200)
-  async login(@Body() loginDto: LoginDto, @Res({ passthrough: true }) res: Response) {
-    const { token } = await this.authService.login(loginDto);
-    
-    // Establecer cookie con el token
-    res.cookie('token', token, {
-      httpOnly: true,
-      secure: false, // true si usas HTTPS en producción
-      sameSite: 'strict',
-      maxAge: 1000 * 60 * 60 * 1, // 1 hora
-    });
+@HttpCode(200)
+async login(@Body() loginDto: LoginDto, @Res({ passthrough: true }) res: Response) {
+  const { token } = await this.authService.login(loginDto);
 
-    return { message: 'Inicio de sesión exitoso' };
-  }
+  res.cookie('token', token, {
+    httpOnly: true,
+    secure: false, // true si usas HTTPS
+    sameSite: 'strict',
+    maxAge: 1000 * 60 * 60 * 1,
+  });
+
+  console.log('🔐 Token generado:', token);
+
+  // 👇 aquí va el cambio importante:
+  return { token }; // <-- esto sí lo ve el frontend
+}
 
   @Post('logout')
   @HttpCode(200)
