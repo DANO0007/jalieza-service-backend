@@ -66,35 +66,48 @@ return {
 
 async findAll() {
   const ciudadanos = await this.ciudadanosRepository.find({
-    relations: ['partner', 'services'], // Asegúrate de incluir la relación de cargos
+    relations: ['partner', 'services', 'services.catalogoServicio'],
     withDeleted: true,
   });
 
-  return ciudadanos.map(c => ({
-    id: c.id,
-    name: c.name,
-    last_name_father: c.last_name_father,
-    last_name_mother: c.last_name_mother,
-    birth_date: c.birth_date,
-    phone: c.phone,
-    marital_status: c.marital_status || null,
-    partner: c.partner ? {
-      id: c.partner.id,
-      name: c.partner.name,
-      last_name_father: c.partner.last_name_father,
-      last_name_mother: c.partner.last_name_mother,
-    } : null,
-    visible: !c.deleted_at,                      // ✅ ya reflejando estado activo/inactivo
-    cargo: c.services?.length > 0 , // ✅ true si tiene cargos
-    candidatoACargo: null // ← ajusta si tienes esta lógica
-  }));
+return ciudadanos.map(c => ({
+  id: c.id,
+  name: c.name,
+  last_name_father: c.last_name_father,
+  last_name_mother: c.last_name_mother,
+  birth_date: c.birth_date,
+  phone: c.phone,
+  marital_status: c.marital_status || null,
+  partner: c.partner
+    ? {
+        id: c.partner.id,
+        name: c.partner.name,
+        last_name_father: c.partner.last_name_father,
+        last_name_mother: c.partner.last_name_mother,
+      }
+    : null,
+  visible: !c.deleted_at,
+  services: c.services?.map(s => ({
+    id: s.id,
+    service_name: s.catalogoServicio?.service_name || 'Sin nombre',
+    start_date: s.start_date,
+    end_date: s.end_date,
+    termination_status: s.termination_status,
+    observations: s.observations,
+  })) || [],
+  candidatoACargo: null
+}));
+
+
 }
+
 
 
 async findOne(id: number) {
   const ciudadano = await this.ciudadanosRepository.findOne({
     where: { id },
-    relations: ['services'] // 👈 Aquí indicas que cargue también los cargos
+   relations: ['partner', 'services', 'services.catalogoServicio']
+// 👈 Aquí indicas que cargue también los cargos
   });
 
   if (!ciudadano) {

@@ -13,10 +13,8 @@ import {
 
 export enum TerminationStatus {
   completed = 'completado',
-  resignation = 'renuncia',
-  expelled = 'expulsado',
-  deceased = 'fallecido',
-  transfer = 'traslado',
+  in_progress = 'en_curso',
+    unfinished = 'inconcluso'
 }
 
 @Entity()

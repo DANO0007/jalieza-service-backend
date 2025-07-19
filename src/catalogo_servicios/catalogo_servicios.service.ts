@@ -1,26 +1,44 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { CreateCatalogoServicioDto } from './dto/create-catalogo_servicio.dto';
 import { UpdateCatalogoServicioDto } from './dto/update-catalogo_servicio.dto';
+import { CatalogoServicio } from '../catalogo_servicios/entities/catalogo_servicio.entity';
 
 @Injectable()
 export class CatalogoServiciosService {
-  create(createCatalogoServicioDto: CreateCatalogoServicioDto) {
-    return 'This action adds a new catalogoServicio';
+  constructor(
+    @InjectRepository(CatalogoServicio)
+    private readonly catalogoServiciosRepository: Repository<CatalogoServicio>,
+  ) {}
+
+  async create(createCatalogoServicioDto: CreateCatalogoServicioDto): Promise<CatalogoServicio> {
+    const nuevoServicio = this.catalogoServiciosRepository.create(createCatalogoServicioDto);
+    return await this.catalogoServiciosRepository.save(nuevoServicio);
   }
 
-  findAll() {
-    return `This action returns all catalogoServicios`;
+  async findAll(): Promise<CatalogoServicio[]> {
+    return await this.catalogoServiciosRepository.find();
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} catalogoServicio`;
+  async findOne(id: number): Promise<CatalogoServicio> {
+    const servicio = await this.catalogoServiciosRepository.findOneBy({ id });
+    if (!servicio) {
+      throw new NotFoundException(`Servicio con id ${id} no encontrado`);
+    }
+    return servicio;
   }
 
-  update(id: number, updateCatalogoServicioDto: UpdateCatalogoServicioDto) {
-    return `This action updates a #${id} catalogoServicio`;
+  async update(id: number, updateCatalogoServicioDto: UpdateCatalogoServicioDto): Promise<CatalogoServicio> {
+    const servicio = await this.findOne(id);
+    Object.assign(servicio, updateCatalogoServicioDto);
+    return await this.catalogoServiciosRepository.save(servicio);
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} catalogoServicio`;
+  async remove(id: number): Promise<void> {
+    const resultado = await this.catalogoServiciosRepository.delete(id);
+    if (resultado.affected === 0) {
+      throw new NotFoundException(`Servicio con id ${id} no encontrado`);
+    }
   }
 }
