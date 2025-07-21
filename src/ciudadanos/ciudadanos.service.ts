@@ -87,6 +87,7 @@ return ciudadanos.map(c => ({
       }
     : null,
   visible: !c.deleted_at,
+  deleted_at: c.deleted_at,
   services: c.services?.map(s => ({
     id: s.id,
     service_name: s.catalogoServicio?.service_name || 'Sin nombre',
