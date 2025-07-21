@@ -58,9 +58,17 @@ return {
     birth_date: saved.birth_date,
     phone: saved.phone,
     marital_status: saved.marital_status,
-    partner: saved.partner?.id || null,
+    partner: saved.partner
+      ? {
+          id: saved.partner.id,
+          name: saved.partner.name,
+          last_name_father: saved.partner.last_name_father,
+          last_name_mother: saved.partner.last_name_mother,
+        }
+      : null,
   },
 };
+
 
 }
 
