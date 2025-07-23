@@ -76,6 +76,7 @@ async findAll() {
   const ciudadanos = await this.ciudadanosRepository.find({
     relations: ['partner', 'services', 'services.catalogoServicio'],
     withDeleted: true,
+    
   });
 
 return ciudadanos.map(c => ({
@@ -123,7 +124,32 @@ async findOne(id: number) {
     throw new NotFoundException(`Citizen with id ${id} not found`);
   }
 
-  return ciudadano;
+ return {
+  id: ciudadano.id,
+  name: ciudadano.name,
+  last_name_father: ciudadano.last_name_father,
+  last_name_mother: ciudadano.last_name_mother,
+  birth_date: ciudadano.birth_date,
+  phone: ciudadano.phone,
+  marital_status: ciudadano.marital_status || null,
+  partner: ciudadano.partner
+    ? {
+        id: ciudadano.partner.id,
+        name: ciudadano.partner.name,
+        last_name_father: ciudadano.partner.last_name_father,
+        last_name_mother: ciudadano.partner.last_name_mother,
+      }
+    : null,
+  services: ciudadano.services?.map(s => ({
+    id: s.id,
+    service_name: s.catalogoServicio?.service_name || 'Sin nombre',
+    start_date: s.start_date,
+    end_date: s.end_date,
+    termination_status: s.termination_status,
+    observations: s.observations, // 👈 ¡Aquí está el campo que quieres ver!
+  })) || [],
+};
+
 }
 
   async update(id: number, updateCiudadanoDto: UpdateCiudadanoDto) {
