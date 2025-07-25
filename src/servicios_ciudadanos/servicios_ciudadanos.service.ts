@@ -11,6 +11,11 @@ import { Repository } from 'typeorm';
 import { ServiciosCiudadano } from './entities/servicios_ciudadano.entity';
 import { Ciudadanos } from 'src/ciudadanos/entities/ciudadano.entity';
 import { CatalogoServicio } from 'src/catalogo_servicios/entities/catalogo_servicio.entity';
+export enum TerminationStatus {
+  completed = 'completado',
+  in_progress = 'en_curso',
+  unfinished = 'inconcluso'
+}
 
 @Injectable()
 export class ServiciosCiudadanosService {
@@ -25,39 +30,51 @@ export class ServiciosCiudadanosService {
     private readonly catalogoServicioRepository: Repository<CatalogoServicio>,
   ) {}
 
-  // ✅ CREAR NUEVO SERVICIO
-  async create(createDto: CreateServiciosCiudadanoDto) {
-    const ciudadano = await this.ciudadanosRepository.findOneBy({
-      id: createDto.ciudadano_id,
-    });
+// ✅ CREAR NUEVO SERVICIO
+async create(createDto: CreateServiciosCiudadanoDto) {
+  const ciudadano = await this.ciudadanosRepository.findOneBy({
+    id: createDto.ciudadano_id,
+  });
 
-    if (!ciudadano) {
-      throw new BadRequestException(
-        `Ciudadano con id ${createDto.ciudadano_id} no existe`,
-      );
-    }
-
-    const catalogo = await this.catalogoServicioRepository.findOneBy({
-      id: createDto.service_id,
-    });
-
-    if (!catalogo) {
-      throw new BadRequestException(
-        `Servicio con id ${createDto.service_id} no existe`,
-      );
-    }
-
-    const nuevoServicio = this.serviciosRepository.create({
-      citizen: ciudadano,
-      catalogoServicio: catalogo,
-      start_date: new Date(createDto.start_date),
-      end_date: new Date(createDto.end_date),
-      termination_status: createDto.termination_status,
-      observations: createDto.observations || '',
-    });
-
-    return await this.serviciosRepository.save(nuevoServicio);
+  if (!ciudadano) {
+    throw new BadRequestException(
+      `Ciudadano con id ${createDto.ciudadano_id} no existe`,
+    );
   }
+
+  const catalogo = await this.catalogoServicioRepository.findOneBy({
+    id: createDto.service_id,
+  });
+
+  if (!catalogo) {
+    throw new BadRequestException(
+      `Servicio con id ${createDto.service_id} no existe`,
+    );
+  }
+
+  const startDate = new Date(createDto.start_date);
+  const endDate = new Date(createDto.end_date);
+
+  // ⚙️ Cálculo del periodo de descanso
+  let restPeriodEnd: Date | null = null;
+  if (createDto.termination_status === TerminationStatus.completed) {
+    restPeriodEnd = new Date(endDate);
+    restPeriodEnd.setFullYear(restPeriodEnd.getFullYear() + 2); // +2 años
+  }
+
+  const nuevoServicio = this.serviciosRepository.create({
+    citizen: ciudadano,
+    catalogoServicio: catalogo,
+    start_date: startDate,
+    end_date: endDate,
+    termination_status: createDto.termination_status,
+    observations: createDto.observations || '',
+    rest_period_end: restPeriodEnd, // ✅ Aquí se asigna si aplica
+  });
+
+  return await this.serviciosRepository.save(nuevoServicio);
+}
+
 
   // 🟡 OBTENER TODOS (opcional, aún sin implementar)
   findAll() {
