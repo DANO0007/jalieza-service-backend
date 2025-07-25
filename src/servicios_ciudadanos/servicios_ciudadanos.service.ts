@@ -1,9 +1,14 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateServiciosCiudadanoDto } from './dto/create-servicios_ciudadano.dto';
 import { UpdateServiciosCiudadanoDto } from './dto/update-servicios_ciudadano.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ServiciosCiudadano } from './entities/servicios_ciudadano.entity';
 import { Repository } from 'typeorm';
+
+import { ServiciosCiudadano } from './entities/servicios_ciudadano.entity';
 import { Ciudadanos } from 'src/ciudadanos/entities/ciudadano.entity';
 import { CatalogoServicio } from 'src/catalogo_servicios/entities/catalogo_servicio.entity';
 
@@ -16,69 +21,84 @@ export class ServiciosCiudadanosService {
     @InjectRepository(Ciudadanos)
     private readonly ciudadanosRepository: Repository<Ciudadanos>,
 
-      @InjectRepository(CatalogoServicio) // 👈 AÑADE ESTO
-  private readonly catalogoServicioRepository: Repository<CatalogoServicio>,
     @InjectRepository(CatalogoServicio)
-  private readonly catalogoServicioRepo: Repository<CatalogoServicio>,
+    private readonly catalogoServicioRepository: Repository<CatalogoServicio>,
   ) {}
-  
-   async create(createDto: CreateServiciosCiudadanoDto) {
-    // Validar que exista el ciudadano antes de crear el servicio
+
+  // ✅ CREAR NUEVO SERVICIO
+  async create(createDto: CreateServiciosCiudadanoDto) {
     const ciudadano = await this.ciudadanosRepository.findOneBy({
       id: createDto.ciudadano_id,
     });
+
     if (!ciudadano) {
-      throw new BadRequestException(`Ciudadano con id ${createDto.ciudadano_id} no existe`);
+      throw new BadRequestException(
+        `Ciudadano con id ${createDto.ciudadano_id} no existe`,
+      );
+    }
+
+    const catalogo = await this.catalogoServicioRepository.findOneBy({
+      id: createDto.service_id,
+    });
+
+    if (!catalogo) {
+      throw new BadRequestException(
+        `Servicio con id ${createDto.service_id} no existe`,
+      );
     }
 
     const nuevoServicio = this.serviciosRepository.create({
-  citizen: ciudadano,
-  catalogoServicio: await this.catalogoServicioRepository.findOneBy({ id: createDto.service_id }),
-  start_date: new Date(createDto.start_date),
-  end_date: new Date(createDto.end_date),
-  termination_status: createDto.termination_status,
-  observations: createDto.observations || '',
-});
-
-    
+      citizen: ciudadano,
+      catalogoServicio: catalogo,
+      start_date: new Date(createDto.start_date),
+      end_date: new Date(createDto.end_date),
+      termination_status: createDto.termination_status,
+      observations: createDto.observations || '',
+    });
 
     return await this.serviciosRepository.save(nuevoServicio);
   }
+
+  // 🟡 OBTENER TODOS (opcional, aún sin implementar)
   findAll() {
     return `This action returns all serviciosCiudadanos`;
   }
 
+  // 🟡 OBTENER UNO POR ID (opcional)
   findOne(id: number) {
     return `This action returns a #${id} serviciosCiudadano`;
   }
 
-async update(id: number, updateDto: UpdateServiciosCiudadanoDto) {
+  // ✅ ACTUALIZAR SERVICIO
+  async update(id: number, updateDto: UpdateServiciosCiudadanoDto) {
   const cargo = await this.serviciosRepository.findOne({
     where: { id },
-    relations: ['catalogoServicio'], // Asegúrate de traer la relación
+    relations: ['catalogoServicio'],
   });
 
   if (!cargo) {
     throw new NotFoundException(`Cargo con id ${id} no encontrado`);
   }
 
-  // ACTUALIZA RELACIÓN CON CatalogoServicio SI CAMBIÓ
+  // Actualiza la relación si cambió el servicio
   if (
     updateDto.service_id &&
     (!cargo.catalogoServicio || cargo.catalogoServicio.id !== updateDto.service_id)
   ) {
-    const nuevoServicio = await this.catalogoServicioRepo.findOneBy({
+    const nuevoServicio = await this.catalogoServicioRepository.findOneBy({
       id: updateDto.service_id,
     });
 
     if (!nuevoServicio) {
-      throw new NotFoundException(`Servicio con id ${updateDto.service_id} no encontrado`);
+      throw new NotFoundException(
+        `Servicio con id ${updateDto.service_id} no encontrado`,
+      );
     }
 
     cargo.catalogoServicio = nuevoServicio;
   }
 
-  // Actualiza los otros campos
+  // Actualiza campos básicos
   cargo.start_date = updateDto.start_date
     ? new Date(updateDto.start_date)
     : cargo.start_date;
@@ -87,35 +107,50 @@ async update(id: number, updateDto: UpdateServiciosCiudadanoDto) {
     ? new Date(updateDto.end_date)
     : cargo.end_date;
 
-  cargo.termination_status =
-    updateDto.termination_status ?? cargo.termination_status;
+  const nuevoStatus = updateDto.termination_status ?? cargo.termination_status;
+  cargo.termination_status = nuevoStatus;
 
   cargo.observations = updateDto.observations ?? cargo.observations;
+
+  // 🚀 Lógica para calcular rest_period_end
+  if (nuevoStatus === 'completado' && cargo.end_date) {
+    const finDescanso = new Date(cargo.end_date);
+    finDescanso.setFullYear(finDescanso.getFullYear() + 2);
+    cargo.rest_period_end = finDescanso;
+  } else {
+    // Si cambia a otro status, anulamos el descanso
+    cargo.rest_period_end = null;
+  }
 
   await this.serviciosRepository.save(cargo);
   return { message: 'Actualización exitosa' };
 }
 
 
-
+  // 🗑️ ELIMINAR (placeholder)
   remove(id: number) {
     return `This action removes a #${id} serviciosCiudadano`;
   }
-async obtenerCargosPorCiudadano(ciudadanoId: number) {
-  if (isNaN(ciudadanoId)) {
-    throw new BadRequestException(`El ID proporcionado no es válido: ${ciudadanoId}`);
+
+  // ✅ OBTENER TODOS LOS CARGOS DE UN CIUDADANO
+  async obtenerCargosPorCiudadano(ciudadanoId: number) {
+    if (isNaN(ciudadanoId)) {
+      throw new BadRequestException(
+        `El ID proporcionado no es válido: ${ciudadanoId}`,
+      );
+    }
+
+    const ciudadano = await this.ciudadanosRepository.findOne({
+      where: { id: ciudadanoId },
+      relations: ['services', 'services.catalogoServicio'],
+    });
+
+    if (!ciudadano) {
+      throw new BadRequestException(
+        `Ciudadano con ID ${ciudadanoId} no existe`,
+      );
+    }
+
+    return ciudadano.services;
   }
-
-  const ciudadano = await this.ciudadanosRepository.findOne({
-    where: { id: ciudadanoId },
-    relations: ['services'],
-  });
-
-  if (!ciudadano) {
-    throw new BadRequestException(`Ciudadano con ID ${ciudadanoId} no existe`);
-  }
-
-  return ciudadano.services;
-}
-
 }

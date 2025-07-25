@@ -32,6 +32,8 @@ catalogoServicio: CatalogoServicio;
 
   @Column({ nullable: false })
   start_date: Date;
+@Column({ type: 'date', nullable: true })
+rest_period_end: Date; // o descanso_termina_en si prefieres en español
 
   @Column({ nullable: false })
   end_date: Date;
