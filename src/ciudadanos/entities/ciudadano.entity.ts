@@ -25,7 +25,7 @@ export class Ciudadanos {
   @Column({ nullable: false })
   last_name_mother: string;
 
-  @Column({ type: 'date', nullable: false })
+  @Column({ type: 'date', nullable: true })
   birth_date: Date;
 
   @Column({ nullable: false })

@@ -36,15 +36,29 @@ export class CiudadanosService {
     }
   }
 
- const nuevoCiudadano = this.ciudadanosRepository.create({
+let localDate: Date | null = null;
+
+if (birth_date) {
+  localDate = new Date(birth_date);
+  if (isNaN(localDate.getTime())) {
+    // Fecha inválida, la ignoramos
+    localDate = null;
+  } else {
+    // Ajuste para desfase de zona horaria
+    localDate.setMinutes(localDate.getMinutes() + localDate.getTimezoneOffset());
+  }
+}
+
+const nuevoCiudadano = this.ciudadanosRepository.create({
   name,
   last_name_father,
   last_name_mother,
-  birth_date,
+  birth_date: localDate, // null si no hay fecha válida
   phone,
   marital_status,
   partner: partnerEntity,
 });
+
 
 const saved = await this.ciudadanosRepository.save(nuevoCiudadano);
 
@@ -116,7 +130,8 @@ return ciudadanos.map(c => ({
 async findOne(id: number) {
   const ciudadano = await this.ciudadanosRepository.findOne({
     where: { id },
-   relations: ['partner', 'services', 'services.catalogoServicio']
+   relations: ['partner', 'services', 'services.catalogoServicio'],
+     withDeleted: true, 
 // 👈 Aquí indicas que cargue también los cargos
   });
 
