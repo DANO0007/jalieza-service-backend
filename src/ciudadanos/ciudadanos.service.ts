@@ -146,6 +146,7 @@ async findOne(id: number) {
   last_name_mother: ciudadano.last_name_mother,
   birth_date: ciudadano.birth_date,
   phone: ciudadano.phone,
+    deleted_at: ciudadano.deleted_at,
   marital_status: ciudadano.marital_status || null,
   partner: ciudadano.partner
     ? {
@@ -177,5 +178,9 @@ async findOne(id: number) {
     const ciudadano = await this.findOne(id);
     return await this.ciudadanosRepository.softRemove(ciudadano);
   }
+  async restaurarCiudadano(id: number) {
+  return await this.ciudadanosRepository.restore(id);
+}
+
   
 }

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe } from '@nestjs/common';
 import { CiudadanosService } from './ciudadanos.service';
 import { CreateCiudadanoDto } from './dto/create-ciudadano.dto';
 import { UpdateCiudadanoDto } from './dto/update-ciudadano.dto';
@@ -36,4 +36,9 @@ export class CiudadanosController {
   remove(@Param('id') id: string) {
     return this.ciudadanosService.remove(+id);
   }
+  @Patch(':id/restaurar')
+restaurar(@Param('id', ParseIntPipe) id: number) {
+  return this.ciudadanosService.restaurarCiudadano(id);
+}
+
 }
