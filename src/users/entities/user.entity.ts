@@ -1,4 +1,5 @@
 import {
+  BeforeInsert,
   Column,
   CreateDateColumn,
   DeleteDateColumn,
@@ -9,6 +10,7 @@ import {
   UpdateDateColumn,
 } from "typeorm";
 import { Rol } from './../../rol/entities/rol.entity';
+import * as bcrypt from 'bcrypt';
 
 @Entity()
 export class Usuarios {
@@ -41,4 +43,8 @@ export class Usuarios {
 
   @DeleteDateColumn()
   deleted_at: Date;
+    @BeforeInsert()
+  async hashPassword() {
+    this.password = await bcrypt.hash(this.password, 10);
+  }
 }
