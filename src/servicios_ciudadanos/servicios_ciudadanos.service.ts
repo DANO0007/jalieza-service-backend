@@ -52,11 +52,27 @@ async create(createDto: CreateServiciosCiudadanoDto) {
     );
   }
 
-  const startDate = new Date(createDto.start_date);
-  const endDate = new Date(createDto.end_date);
+  // 🚨 VALIDACIÓN para impedir más de un cargo "EnCurso"
+  if (createDto.termination_status === TerminationStatus.in_progress) {
+    const cargosEnCurso = await this.serviciosRepository.find({
+      where: {
+        citizen: { id: createDto.ciudadano_id },
+        termination_status: TerminationStatus.in_progress,
+      },
+    });
+
+    if (cargosEnCurso.length > 0) {
+      throw new BadRequestException(
+        `El ciudadano ya tiene un cargo en curso y no puede registrar otro.`
+      );
+    }
+  }
 
   // ⚙️ Cálculo del periodo de descanso
+  const startDate = new Date(createDto.start_date);
+  const endDate = new Date(createDto.end_date);
   let restPeriodEnd: Date | null = null;
+
   if (createDto.termination_status === TerminationStatus.completed) {
     restPeriodEnd = new Date(endDate);
     restPeriodEnd.setFullYear(restPeriodEnd.getFullYear() + 2); // +2 años
@@ -69,11 +85,12 @@ async create(createDto: CreateServiciosCiudadanoDto) {
     end_date: endDate,
     termination_status: createDto.termination_status,
     observations: createDto.observations || '',
-    rest_period_end: restPeriodEnd, // ✅ Aquí se asigna si aplica
+    rest_period_end: restPeriodEnd,
   });
 
   return await this.serviciosRepository.save(nuevoServicio);
 }
+
 
 
   // 🟡 OBTENER TODOS (opcional, aún sin implementar)
