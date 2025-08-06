@@ -14,6 +14,10 @@ export class CreateCiudadanoDto {
   @IsString()
   last_name_mother: string;
 
+  @Transform(({ value }) => value.trim())
+  @IsString()
+  comment: string;
+
   @Type(() => Date)
   @IsDate()
   birth_date: Date;

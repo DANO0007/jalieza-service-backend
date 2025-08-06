@@ -25,6 +25,9 @@ export class Ciudadanos {
   @Column({ nullable: false })
   last_name_mother: string;
 
+  @Column({nullable:true})
+  comment:string;
+
   @Column({ type: 'date', nullable: true })
   birth_date: Date;
 
