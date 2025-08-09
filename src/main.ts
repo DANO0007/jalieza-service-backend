@@ -23,6 +23,6 @@ async function bootstrap() {
     credentials: true, // ✅ Permite enviar cookies entre frontend y backend
   });
 
-  await app.listen(process.env.PORT ?? 3000);
+  await app.listen(process.env.PORT ?? 3000,'0.0.0.0');
 }
 bootstrap();
