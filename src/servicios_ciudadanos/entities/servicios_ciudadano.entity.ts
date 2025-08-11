@@ -30,23 +30,23 @@ export class ServiciosCiudadano {
 @JoinColumn({ name: 'service_id' }) // 👈 Usa el mismo nombre que el campo existente
 catalogoServicio: CatalogoServicio;
 
-  @Column({ nullable: false })
+  @Column({ nullable: true })
   start_date: Date;
 @Column({ type: 'date', nullable: true })
 rest_period_end: Date; // o descanso_termina_en si prefieres en español
 
-  @Column({ nullable: false })
+  @Column({ nullable: true })
   end_date: Date;
 
   @Column({
-    nullable: false,
+    nullable: true,
     type: 'enum',
     enum: TerminationStatus,
     default: TerminationStatus.completed,
   })
   termination_status: TerminationStatus;
 
-  @Column({ nullable: false })
+  @Column({ nullable: true })
   observations: string;
 
   @CreateDateColumn()
