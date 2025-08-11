@@ -1,7 +1,8 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe, UseGuards } from '@nestjs/common';
 import { CiudadanosService } from './ciudadanos.service';
 import { CreateCiudadanoDto } from './dto/create-ciudadano.dto';
 import { UpdateCiudadanoDto } from './dto/update-ciudadano.dto';
+import { AuthGuard } from 'src/auth/guard/auth.guard';
 
 @Controller('ciudadanos')
 export class CiudadanosController {
@@ -16,7 +17,7 @@ export class CiudadanosController {
   register(@Body() dto: CreateCiudadanoDto) {
   return this.ciudadanosService.register(dto);
 }
-
+@UseGuards(AuthGuard)
   @Get()
   findAll() {
     return this.ciudadanosService.findAll();
