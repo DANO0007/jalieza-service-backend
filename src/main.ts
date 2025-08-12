@@ -1,6 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { ValidationPipe } from '@nestjs/common';
+import { BadRequestException, ValidationPipe } from '@nestjs/common';
 import * as cookieParser from 'cookie-parser';
 
 async function bootstrap() {
@@ -11,15 +11,21 @@ async function bootstrap() {
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
-      forbidNonWhitelisted: true,
-      transform: true,
+        forbidNonWhitelisted: true,
+  transform: true,
+      errorHttpStatusCode: 400,
+  exceptionFactory: (errors) => {
+    console.error(errors); // Esto imprime el detalle del error en consola
+    return new BadRequestException(errors);
+  }
+      
     })
   );
 
   app.use(cookieParser()); // ✅ Habilita cookies
 
   app.enableCors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:8100', // ⚠️ Cambia esto si usas otro frontend
+     origin: ['http://localhost:8100', 'https://api.jalieza.com.mx'], // ⚠️ Cambia esto si usas otro frontend
     credentials: true, // ✅ Permite enviar cookies entre frontend y backend
   });
 

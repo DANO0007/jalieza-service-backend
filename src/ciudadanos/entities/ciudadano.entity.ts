@@ -16,13 +16,13 @@ export class Ciudadanos {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ nullable: false })
+  @Column({ nullable: true })
   name: string;
 
-  @Column({ nullable: false })
+  @Column({ nullable: true })
   last_name_father: string;
 
-  @Column({ nullable: false })
+  @Column({ nullable: true })
   last_name_mother: string;
 
   @Column({nullable:true})
@@ -31,7 +31,7 @@ export class Ciudadanos {
   @Column({ type: 'date', nullable: true })
   birth_date: Date;
 
-  @Column({ nullable: false })
+  @Column({ nullable: true })
   phone: string;
 
   @Column({ type: 'varchar', length: 255, nullable: true })

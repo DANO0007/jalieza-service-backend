@@ -2,34 +2,45 @@ import { Transform, Type } from "class-transformer";
 import { IsBoolean, IsDate, IsNumber, IsOptional, IsString } from "class-validator";
 
 export class CreateCiudadanoDto {
-  @Transform(({ value }) => value.trim())
+  @IsOptional()
+  @Transform(({ value }) => value?.trim?.())
   @IsString()
-  name: string;
+  name?: string | null;
 
-  @Transform(({ value }) => value.trim())
+  @IsOptional()
+  @Transform(({ value }) => value?.trim?.())
   @IsString()
-  last_name_father: string;
+  last_name_father?: string | null;
 
-  @Transform(({ value }) => value.trim())
+  @IsOptional()
+  @Transform(({ value }) => value?.trim?.())
   @IsString()
-  last_name_mother: string;
+  last_name_mother?: string | null;
 
-  @Transform(({ value }) => value.trim())
+  @IsOptional()
+  @Transform(({ value }) => value?.trim?.())
   @IsString()
-  comment: string;
+  comment?: string | null;
 
-  @Type(() => Date)
-  @IsDate()
-  birth_date: Date;
-
-  @Transform(({ value }) => value.trim())
+@Transform(({ value }) => {
+  if (!value || value === '') return undefined;  // permite vacío
+  const date = new Date(value);
+  return isNaN(date.getTime()) ? undefined : date; // si no es fecha válida, undefined también
+})
+@Type(() => Date)
+@IsOptional()
+@IsDate()
+birth_date?: Date | null;
+  @IsOptional()
+  @Transform(({ value }) => value?.trim?.())
   @IsString()
-  phone: string;
+  phone?: string | null;
 
+  @IsOptional()
   @IsString()
-  marital_status: string|null;
+  marital_status?: string | null;
 
   @IsOptional()
   @IsNumber()
-  partner: number; // Puedes dejarlo como partner_id si usas solo el ID
+  partner?: number | null; // O partner_id si usas solo el ID
 }
