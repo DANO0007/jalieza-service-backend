@@ -1,4 +1,4 @@
-import { ServiciosCiudadano } from "src/servicios_ciudadanos/entities/servicios_ciudadano.entity";
+import { ServiciosCiudadano } from 'src/servicios_ciudadanos/entities/servicios_ciudadano.entity';
 import {
   Column,
   CreateDateColumn,
@@ -9,24 +9,25 @@ import {
   OneToMany,
   UpdateDateColumn,
   PrimaryGeneratedColumn,
-} from "typeorm";
+} from 'typeorm';
+import { MaritalStatus } from '../enums/marital-status.enum';
 
 @Entity()
 export class Ciudadanos {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ nullable: true })
+  @Column({ nullable: false })
   name: string;
 
-  @Column({ nullable: true })
+  @Column({ nullable: false })
   last_name_father: string;
 
   @Column({ nullable: true })
   last_name_mother: string;
 
-  @Column({nullable:true})
-  comment:string;
+  @Column({ nullable: true })
+  comment: string;
 
   @Column({ type: 'date', nullable: true })
   birth_date: Date;
@@ -34,14 +35,16 @@ export class Ciudadanos {
   @Column({ nullable: true })
   phone: string;
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
-  marital_status: string;
+  @Column({ type: 'int', nullable: false })
+  marital_status: MaritalStatus;
 
-  @ManyToOne(() => Ciudadanos, citizen => citizen.partners, { nullable: true })
+  @ManyToOne(() => Ciudadanos, (citizen) => citizen.partners, {
+    nullable: true,
+  })
   @JoinColumn({ name: 'partner_id' })
   partner: Ciudadanos;
 
-  @OneToMany(() => Ciudadanos, citizen => citizen.partner, { nullable: true })
+  @OneToMany(() => Ciudadanos, (citizen) => citizen.partner, { nullable: true })
   partners: Ciudadanos[];
 
   @CreateDateColumn()
@@ -53,6 +56,8 @@ export class Ciudadanos {
   @DeleteDateColumn()
   deleted_at: Date;
 
-  @OneToMany(() => ServiciosCiudadano, service => service.citizen)
+  @OneToMany(() => ServiciosCiudadano, (service) => service.citizen, {
+    nullable: true,
+  })
   services: ServiciosCiudadano[];
 }

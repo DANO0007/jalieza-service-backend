@@ -1,7 +1,19 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  ParseIntPipe,
+  UseGuards,
+} from '@nestjs/common';
 import { CiudadanosService } from './ciudadanos.service';
 import { CreateCiudadanoDto } from './dto/create-ciudadano.dto';
 import { UpdateCiudadanoDto } from './dto/update-ciudadano.dto';
+import { CheckDuplicateCiudadanoDto } from './dto/check-duplicate.dto';
+import { SearchCiudadanoDto } from './dto/search-ciudadano.dto';
 import { AuthGuard } from 'src/auth/guard/auth.guard';
 
 @Controller('ciudadanos')
@@ -9,18 +21,38 @@ export class CiudadanosController {
   constructor(private readonly ciudadanosService: CiudadanosService) {}
 
   @Post()
- async create(@Body() createCiudadanoDto: CreateCiudadanoDto) {
+  async create(@Body() createCiudadanoDto: CreateCiudadanoDto) {
     return this.ciudadanosService.register(createCiudadanoDto);
   }
 
   @Post('register')
   register(@Body() dto: CreateCiudadanoDto) {
-  return this.ciudadanosService.register(dto);
-}
-@UseGuards(AuthGuard)
+    return this.ciudadanosService.register(dto);
+  }
+
+  @Post('check-duplicate')
+  checkDuplicate(@Body() checkDuplicateDto: CheckDuplicateCiudadanoDto) {
+    return this.ciudadanosService.checkDuplicate(checkDuplicateDto);
+  }
+
+  @Get('marital-statuses')
+  getMaritalStatuses() {
+    return this.ciudadanosService.getMaritalStatuses();
+  }
+
+  @Post('search')
+  searchCiudadanos(@Body() searchDto: SearchCiudadanoDto) {
+    return this.ciudadanosService.searchCiudadanos(searchDto.query);
+  }
+
   @Get()
   findAll() {
-    return this.ciudadanosService.findAll();
+    return this.ciudadanosService.findAll(false);
+  }
+
+  @Get('deleted')
+  findAllDeleted() {
+    return this.ciudadanosService.findAll(true);
   }
 
   @Get(':id')
@@ -29,7 +61,10 @@ export class CiudadanosController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateCiudadanoDto: UpdateCiudadanoDto) {
+  update(
+    @Param('id') id: string,
+    @Body() updateCiudadanoDto: UpdateCiudadanoDto,
+  ) {
     return this.ciudadanosService.update(+id, updateCiudadanoDto);
   }
 
@@ -38,8 +73,7 @@ export class CiudadanosController {
     return this.ciudadanosService.remove(+id);
   }
   @Patch(':id/restaurar')
-restaurar(@Param('id', ParseIntPipe) id: number) {
-  return this.ciudadanosService.restaurarCiudadano(id);
-}
-
+  restaurar(@Param('id', ParseIntPipe) id: number) {
+    return this.ciudadanosService.restaurarCiudadano(id);
+  }
 }
