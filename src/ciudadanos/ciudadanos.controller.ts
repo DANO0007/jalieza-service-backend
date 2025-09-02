@@ -6,7 +6,6 @@ import {
   Patch,
   Param,
   Delete,
-  ParseIntPipe,
   UseGuards,
 } from '@nestjs/common';
 import { CiudadanosService } from './ciudadanos.service';
@@ -22,18 +21,13 @@ export class CiudadanosController {
 
   @Post()
   async create(@Body() createCiudadanoDto: CreateCiudadanoDto) {
-    return this.ciudadanosService.register(createCiudadanoDto);
+    return this.ciudadanosService.createCiudadano(createCiudadanoDto);
   }
 
-  @Post('register')
-  register(@Body() dto: CreateCiudadanoDto) {
-    return this.ciudadanosService.register(dto);
-  }
-
-  @Post('check-duplicate')
+ /*  @Post('check-duplicate')
   checkDuplicate(@Body() checkDuplicateDto: CheckDuplicateCiudadanoDto) {
     return this.ciudadanosService.checkDuplicate(checkDuplicateDto);
-  }
+  } */
 
   @Get('marital-statuses')
   getMaritalStatuses() {
@@ -50,10 +44,10 @@ export class CiudadanosController {
     return this.ciudadanosService.findAll(false);
   }
 
-  @Get('deleted')
+  /* @Get('deleted')
   findAllDeleted() {
     return this.ciudadanosService.findAll(true);
-  }
+  } */
 
   @Get(':id')
   findOne(@Param('id') id: string) {
@@ -72,8 +66,9 @@ export class CiudadanosController {
   remove(@Param('id') id: string) {
     return this.ciudadanosService.remove(+id);
   }
-  @Patch(':id/restaurar')
+
+  /* @Patch(':id/restaurar')
   restaurar(@Param('id', ParseIntPipe) id: number) {
     return this.ciudadanosService.restaurarCiudadano(id);
-  }
+  } */
 }

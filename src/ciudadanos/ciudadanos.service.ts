@@ -14,14 +14,20 @@ import {
   MaritalStatus,
   MaritalStatusLabels,
 } from './enums/marital-status.enum';
+import { CiudadanoResponse, CiudadanoListResponse, CiudadanoCreateResponse,CiudadanoUpdateResponse } from './interfaces/ciudadano-response.interface';
+import { calculateAge, formatDateOnly, validateBirthDate } from './utils/date-validator.util';
+import { MaritalStatusService } from './services/marital-status.service';
+
 
 @Injectable()
 export class CiudadanosService {
   constructor(
     @InjectRepository(Ciudadanos)
     private readonly ciudadanosRepository: Repository<Ciudadanos>,
+    private readonly maritalStatusService: MaritalStatusService,
   ) {}
 
+  //Valida si el ciudadano ya existe
   async checkDuplicate(checkDuplicateDto: CheckDuplicateCiudadanoDto) {
     const { name, last_name_father, last_name_mother } = checkDuplicateDto;
 
@@ -35,28 +41,30 @@ export class CiudadanosService {
     });
 
     return {
-      isDuplicate: !!existingCiudadano,
-      existingCiudadano: existingCiudadano
-        ? {
-            id: existingCiudadano.id,
-            name: existingCiudadano.name,
-            last_name_father: existingCiudadano.last_name_father,
-            last_name_mother: existingCiudadano.last_name_mother,
-            marital_status: existingCiudadano.marital_status,
-            birth_date: existingCiudadano.birth_date,
-            age: this.calculateAge(existingCiudadano.birth_date),
-          }
-        : null,
-    };
+    isDuplicate: !!existingCiudadano,
+    existingCiudadano: existingCiudadano
+      ? {
+          id: existingCiudadano.id,
+          name: existingCiudadano.name,
+          last_name_father: existingCiudadano.last_name_father,
+          last_name_mother: existingCiudadano.last_name_mother,
+          marital_status: existingCiudadano.marital_status,
+          birth_date: formatDateOnly(existingCiudadano.birth_date),
+          age: calculateAge(existingCiudadano.birth_date),
+        }
+      : null,
+  };
   }
 
+  //Obtiene los estados civiles
   getMaritalStatuses() {
-    return Object.values(MaritalStatus).map((status) => ({
-      id: status,
-      label: MaritalStatusLabels[status],
-    }));
+    return [
+      { id: MaritalStatus.SOLTERO, label: MaritalStatusLabels[MaritalStatus.SOLTERO] },
+      { id: MaritalStatus.CASADO, label: MaritalStatusLabels[MaritalStatus.CASADO] },
+    ];
   }
 
+  //Busca ciudadanos por nombre, apellido paterno, apellido materno
   async searchCiudadanos(query: string) {
     if (!query || query.trim().length < 2) {
       return [];
@@ -85,18 +93,15 @@ export class CiudadanosService {
       last_name_father: c.last_name_father,
       last_name_mother: c.last_name_mother,
       marital_status: c.marital_status,
-      birth_date: c.birth_date,
-      age: this.calculateAge(c.birth_date),
+      birth_date: formatDateOnly(c.birth_date),
+      age: calculateAge(c.birth_date),
       full_name:
         `${c.name} ${c.last_name_father} ${c.last_name_mother || ''}`.trim(),
     }));
   }
 
-  create(createCiudadanoDto: CreateCiudadanoDto) {
-    return 'This action adds a new ciudadano';
-  }
-
-  async register(dto: CreateCiudadanoDto) {
+  //Registra un nuevo ciudadano
+  async createCiudadano(dto: CreateCiudadanoDto): Promise<CiudadanoCreateResponse> {
     const {
       name,
       last_name_father,
@@ -122,47 +127,21 @@ export class CiudadanosService {
       });
     }
 
-    // Validar que si está casado, debe tener pareja
-    if (marital_status === MaritalStatus.CASADO && !partnerId) {
-      throw new BadRequestException(
-        'Si el estado civil es casado, debe especificar una pareja',
-      );
-    }
-
-    let partnerEntity: Ciudadanos = null;
-
-    if (partnerId) {
-      partnerEntity = await this.ciudadanosRepository.findOne({
-        where: { id: partnerId },
-        relations: ['partner'],
-      });
-      if (!partnerEntity) {
-        throw new BadRequestException(`Partner with id ${partnerId} not found`);
-      }
-
-      // Verificar que la pareja no esté ya casada con otra persona
-      if (
-        partnerEntity.marital_status === MaritalStatus.CASADO &&
-        partnerEntity.partner
-      ) {
-        throw new BadRequestException(
-          `La persona seleccionada ya está casada con ${partnerEntity.partner.name} ${partnerEntity.partner.last_name_father}`,
-        );
-      }
-    }
+    // Validar estado civil y pareja usando el servicio especializado
+    const partnerEntity = await this.maritalStatusService.validateCiudadanoCreation(
+      marital_status,
+      partnerId,
+    );
 
     let localDate: Date | null = null;
 
     if (birth_date) {
-      localDate = new Date(birth_date);
-      if (isNaN(localDate.getTime())) {
-        // Fecha inválida, la ignoramos
-        localDate = null;
-      } else {
-        // Ajuste para desfase de zona horaria
-        localDate.setMinutes(
-          localDate.getMinutes() + localDate.getTimezoneOffset(),
-        );
+      try {
+        // Usar la función de validación que incluye límites de edad
+        localDate = validateBirthDate(new Date(birth_date));
+      } catch (error) {
+        // Si la validación falla, lanzar el error
+        throw error;
       }
     }
 
@@ -187,8 +166,8 @@ export class CiudadanosService {
         last_name_father: saved.last_name_father,
         last_name_mother: saved.last_name_mother,
         comment: saved.comment,
-        birth_date: saved.birth_date,
-        age: this.calculateAge(saved.birth_date),
+        birth_date: formatDateOnly(saved.birth_date),
+        age: calculateAge(saved.birth_date),
         phone: saved.phone,
         marital_status: saved.marital_status,
         partner: saved.partner
@@ -203,20 +182,21 @@ export class CiudadanosService {
     };
   }
 
-  async findAll(includeDeleted: boolean = false) {
+  //Obtiene todos los ciudadanos
+  async findAll(includeDeleted: boolean = false): Promise<CiudadanoListResponse[]> {
     const ciudadanos = await this.ciudadanosRepository.find({
       relations: ['partner', 'services', 'services.catalogoServicio'],
       withDeleted: includeDeleted,
     });
 
-    return ciudadanos.map((c) => ({
+    return ciudadanos.map((c): CiudadanoListResponse => ({
       id: c.id,
       name: c.name,
       last_name_father: c.last_name_father,
       last_name_mother: c.last_name_mother,
       comment: c.comment,
-      birth_date: c.birth_date,
-      age: this.calculateAge(c.birth_date),
+      birth_date: formatDateOnly(c.birth_date),
+      age: calculateAge(c.birth_date),
       phone: c.phone,
       marital_status: c.marital_status || null,
       partner: c.partner
@@ -244,7 +224,8 @@ export class CiudadanosService {
     }));
   }
 
-  async findOne(id: number, includeDeleted: boolean = false) {
+  //Obtiene un ciudadano por id
+  async findOne(id: number, includeDeleted: boolean = false): Promise<CiudadanoListResponse> {
     const ciudadano = await this.ciudadanosRepository.findOne({
       where: { id },
       relations: ['partner', 'services', 'services.catalogoServicio'],
@@ -256,37 +237,42 @@ export class CiudadanosService {
     }
 
     return {
-      id: ciudadano.id,
-      name: ciudadano.name,
-      last_name_father: ciudadano.last_name_father,
-      last_name_mother: ciudadano.last_name_mother,
-      comment: ciudadano.comment,
-      birth_date: ciudadano.birth_date,
-      age: this.calculateAge(ciudadano.birth_date),
-      phone: ciudadano.phone,
-      ...(includeDeleted && { deleted_at: ciudadano.deleted_at }),
-      marital_status: ciudadano.marital_status || null,
-      partner: ciudadano.partner
-        ? {
-            id: ciudadano.partner.id,
-            name: ciudadano.partner.name,
-            last_name_father: ciudadano.partner.last_name_father,
-            last_name_mother: ciudadano.partner.last_name_mother,
-          }
-        : null,
-      services:
-        ciudadano.services?.map((s) => ({
-          id: s.id,
-          service_name: s.catalogoServicio?.service_name || 'Sin nombre',
-          start_date: s.start_date,
-          end_date: s.end_date,
-          termination_status: s.termination_status,
-          observations: s.observations,
-        })) || [],
-    };
+    id: ciudadano.id,
+    name: ciudadano.name,
+    last_name_father: ciudadano.last_name_father,
+    last_name_mother: ciudadano.last_name_mother,
+    comment: ciudadano.comment,
+    birth_date: formatDateOnly(ciudadano.birth_date),
+    age: calculateAge(ciudadano.birth_date),
+    phone: ciudadano.phone,
+    marital_status: ciudadano.marital_status || null,
+    partner: ciudadano.partner
+      ? {
+          id: ciudadano.partner.id,
+          name: ciudadano.partner.name,
+          last_name_father: ciudadano.partner.last_name_father,
+          last_name_mother: ciudadano.partner.last_name_mother,
+        }
+      : null,
+    ...(includeDeleted && {
+      visible: !ciudadano.deleted_at,
+      deleted_at: ciudadano.deleted_at,
+    }),
+    services:
+      ciudadano.services?.map((s) => ({
+        id: s.id,
+        service_name: s.catalogoServicio?.service_name || 'Sin nombre',
+        start_date: s.start_date,
+        end_date: s.end_date,
+        termination_status: s.termination_status,
+        observations: s.observations,
+      })) || [],
+    candidatoACargo: null,
+  };
   }
 
-  async update(id: number, updateCiudadanoDto: UpdateCiudadanoDto) {
+  //Actualiza un ciudadano
+  async update(id: number, updateCiudadanoDto: UpdateCiudadanoDto): Promise<CiudadanoUpdateResponse> {
     const ciudadano = await this.ciudadanosRepository.findOne({
       where: { id },
       relations: ['partner'],
@@ -303,9 +289,12 @@ export class CiudadanosService {
       ...otherFields
     } = updateCiudadanoDto;
 
-    // Manejar cambios de estado civil
+    // Manejar cambios de estado civil usando el MaritalStatusService
     if (newMaritalStatus !== undefined) {
-      await this.handleMaritalStatusChange(
+      // ✅ VALIDAR antes del cambio
+      this.maritalStatusService.validateMaritalStatusUpdate(newMaritalStatus, newPartnerId);
+      
+      await this.maritalStatusService.handleMaritalStatusChange(
         ciudadano,
         newMaritalStatus,
         newPartnerId,
@@ -317,196 +306,66 @@ export class CiudadanosService {
 
     const saved = await this.ciudadanosRepository.save(ciudadano);
 
-    return {
-      message: 'Ciudadano actualizado exitosamente',
-      data: {
-        id: saved.id,
-        name: saved.name,
-        last_name_father: saved.last_name_father,
-        last_name_mother: saved.last_name_mother,
-        comment: saved.comment,
-        birth_date: saved.birth_date,
-        age: this.calculateAge(saved.birth_date),
-        phone: saved.phone,
-        marital_status: saved.marital_status,
-        partner: saved.partner
-          ? {
-              id: saved.partner.id,
-              name: saved.partner.name,
-              last_name_father: saved.partner.last_name_father,
-              last_name_mother: saved.partner.last_name_mother,
-            }
-          : null,
-      },
-    };
+    const response: CiudadanoResponse = {
+    id: saved.id,
+    name: saved.name,
+    last_name_father: saved.last_name_father,
+    last_name_mother: saved.last_name_mother,
+    comment: saved.comment,
+    birth_date: formatDateOnly(saved.birth_date),
+    age: calculateAge(saved.birth_date),
+    phone: saved.phone,
+    marital_status: saved.marital_status,
+    partner: saved.partner
+      ? {
+          id: saved.partner.id,
+          name: saved.partner.name,
+          last_name_father: saved.partner.last_name_father,
+          last_name_mother: saved.partner.last_name_mother,
+        }
+      : null,
+  };
+
+  return {
+    message: 'Ciudadano actualizado exitosamente',
+    data: response,
+  };
   }
 
+  //Elimina un ciudadano
   async remove(id: number) {
-    const ciudadano = await this.findOne(id, false);
+    const ciudadano = await this.ciudadanosRepository.findOne({ 
+      where: { id },
+      relations: ['partner'] // Incluir relación de pareja
+    });
+    
+    if (!ciudadano) {
+      throw new NotFoundException(`Citizen with id ${id} not found`);
+    }
+
+    // Si el ciudadano tiene pareja, actualizar su estado civil antes de borrarlo
+    if (ciudadano.partner) {
+      // Cambiar el estado civil del ciudadano a soltero
+      await this.maritalStatusService.handleMaritalStatusChange(
+        ciudadano,
+        MaritalStatus.SOLTERO,
+        undefined // Sin nueva pareja
+      );
+      
+      // También actualizar el estado civil de la pareja que queda
+      const pareja = ciudadano.partner;
+      if (pareja && pareja.marital_status === MaritalStatus.CASADO) {
+        pareja.marital_status = MaritalStatus.SOLTERO;
+        pareja.partner = null;
+        await this.ciudadanosRepository.save(pareja);
+      }
+    }
+
     return await this.ciudadanosRepository.softRemove(ciudadano);
   }
-  async restaurarCiudadano(id: number) {
+  
+  //Restaura un ciudadano
+  /* async restaurarCiudadano(id: number) {
     return await this.ciudadanosRepository.restore(id);
-  }
-
-  private calculateAge(birthDate: Date): number | null {
-    if (!birthDate) return null;
-
-    const today = new Date();
-    const birth = new Date(birthDate);
-
-    let age = today.getFullYear() - birth.getFullYear();
-    const monthDiff = today.getMonth() - birth.getMonth();
-
-    if (
-      monthDiff < 0 ||
-      (monthDiff === 0 && today.getDate() < birth.getDate())
-    ) {
-      age--;
-    }
-
-    return age;
-  }
-
-  private async handleMaritalStatusChange(
-    ciudadano: Ciudadanos,
-    newMaritalStatus: MaritalStatus,
-    newPartnerId?: number,
-  ) {
-    const currentMaritalStatus = ciudadano.marital_status;
-
-    // Si no hay cambio de estado civil, no hacer nada
-    if (currentMaritalStatus === newMaritalStatus) {
-      return;
-    }
-
-    // Caso 1: Cambio de SOLTERO a CASADO
-    if (
-      currentMaritalStatus === MaritalStatus.SOLTERO &&
-      newMaritalStatus === MaritalStatus.CASADO
-    ) {
-      if (!newPartnerId) {
-        throw new BadRequestException(
-          'Si cambia a casado, debe especificar una pareja',
-        );
-      }
-
-      // Buscar la pareja
-      const partner = await this.ciudadanosRepository.findOneBy({
-        id: newPartnerId,
-      });
-      if (!partner) {
-        throw new BadRequestException(
-          `Pareja con id ${newPartnerId} no encontrada`,
-        );
-      }
-
-      // Verificar que la pareja no sea el mismo ciudadano
-      if (partner.id === ciudadano.id) {
-        throw new BadRequestException(
-          'Un ciudadano no puede ser pareja de sí mismo',
-        );
-      }
-
-      // Verificar que la pareja no esté ya casada con otra persona
-      if (
-        partner.marital_status === MaritalStatus.CASADO &&
-        partner.partner &&
-        partner.partner.id !== ciudadano.id
-      ) {
-        throw new BadRequestException(
-          `La persona seleccionada ya está casada con ${partner.partner.name} ${partner.partner.last_name_father}`,
-        );
-      }
-
-      // Establecer la relación bidireccional
-      ciudadano.marital_status = MaritalStatus.CASADO;
-      ciudadano.partner = partner;
-
-      // También actualizar el estado civil de la pareja si es necesario
-      if (partner.marital_status !== MaritalStatus.CASADO) {
-        partner.marital_status = MaritalStatus.CASADO;
-        partner.partner = ciudadano;
-        await this.ciudadanosRepository.save(partner);
-      }
-    }
-
-    // Caso 2: Cambio de CASADO a SOLTERO
-    else if (
-      currentMaritalStatus === MaritalStatus.CASADO &&
-      newMaritalStatus === MaritalStatus.SOLTERO
-    ) {
-      const currentPartner = ciudadano.partner;
-
-      // Remover la relación del ciudadano actual
-      ciudadano.marital_status = MaritalStatus.SOLTERO;
-      ciudadano.partner = null;
-
-      // Si la pareja actual existe, también remover su relación
-      if (currentPartner) {
-        currentPartner.partner = null;
-        // Solo cambiar a soltero si no tiene otra pareja
-        if (currentPartner.marital_status === MaritalStatus.CASADO) {
-          currentPartner.marital_status = MaritalStatus.SOLTERO;
-        }
-        await this.ciudadanosRepository.save(currentPartner);
-      }
-    }
-
-    // Caso 3: Cambio de pareja (permanece casado)
-    else if (
-      currentMaritalStatus === MaritalStatus.CASADO &&
-      newMaritalStatus === MaritalStatus.CASADO &&
-      newPartnerId
-    ) {
-      const currentPartner = ciudadano.partner;
-      const newPartner = await this.ciudadanosRepository.findOne({
-        where: { id: newPartnerId },
-        relations: ['partner'],
-      });
-
-      if (!newPartner) {
-        throw new BadRequestException(
-          `Pareja con id ${newPartnerId} no encontrada`,
-        );
-      }
-
-      // Verificar que la nueva pareja no sea el mismo ciudadano
-      if (newPartner.id === ciudadano.id) {
-        throw new BadRequestException(
-          'Un ciudadano no puede ser pareja de sí mismo',
-        );
-      }
-
-      // Verificar que la nueva pareja no esté ya casada con otra persona
-      if (
-        newPartner.marital_status === MaritalStatus.CASADO &&
-        newPartner.partner &&
-        newPartner.partner.id !== ciudadano.id
-      ) {
-        throw new BadRequestException(
-          `La persona seleccionada ya está casada con ${newPartner.partner.name} ${newPartner.partner.last_name_father}`,
-        );
-      }
-
-      // Remover relación anterior
-      if (currentPartner) {
-        currentPartner.partner = null;
-        if (currentPartner.marital_status === MaritalStatus.CASADO) {
-          currentPartner.marital_status = MaritalStatus.SOLTERO;
-        }
-        await this.ciudadanosRepository.save(currentPartner);
-      }
-
-      // Establecer nueva relación
-      ciudadano.partner = newPartner;
-
-      // Actualizar estado civil de la nueva pareja si es necesario
-      if (newPartner.marital_status !== MaritalStatus.CASADO) {
-        newPartner.marital_status = MaritalStatus.CASADO;
-        newPartner.partner = ciudadano;
-        await this.ciudadanosRepository.save(newPartner);
-      }
-    }
-  }
+  } */ 
 }
