@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Rol } from '../rol/entities/rol.entity';
 import { Usuarios } from '../users/entities/user.entity';
+import { CatalogoOrden } from 'src/catalogo_orden/entities/catalogo_orden.entity';
 import * as bcryptjs from 'bcryptjs';
 
 @Injectable()
@@ -12,6 +13,8 @@ export class SeedingService implements OnModuleInit {
     private readonly rolRepository: Repository<Rol>,
     @InjectRepository(Usuarios)
     private readonly usuariosRepository: Repository<Usuarios>,
+    @InjectRepository(CatalogoOrden)
+    private readonly catalogoOrdenRepository: Repository<CatalogoOrden>,
   ) {}
 
   async onModuleInit() {
@@ -24,6 +27,7 @@ export class SeedingService implements OnModuleInit {
       // Verificar si ya hay datos
       const existingRoles = await this.rolRepository.count();
       const existingUsers = await this.usuariosRepository.count();
+      const existingOrders = await this.catalogoOrdenRepository.count();
 
       if (existingRoles === 0) {
         console.log('📝 Creando roles por defecto...');
@@ -33,6 +37,11 @@ export class SeedingService implements OnModuleInit {
       if (existingUsers === 0) {
         console.log('👤 Creando usuario administrador por defecto...');
         await this.createDefaultAdmin();
+      }
+
+      if (existingOrders === 0) {
+        console.log('📋 Creando órdenes por defecto...');
+        await this.createDefaultOrders();
       }
 
       console.log('✅ Seeding completado exitosamente');
@@ -72,6 +81,22 @@ export class SeedingService implements OnModuleInit {
     await this.usuariosRepository.save(adminUser);
     console.log('   - Usuario admin creado: admin@admin.com / admin123');
   }
+  private async createDefaultOrders() {
+  const orders = [
+    { order_name: 'PRIMER ORDEN', required_points: 100 },
+    { order_name: 'SEGUNDO ORDEN', required_points: 200 },
+    { order_name: 'TERCER ORDEN', required_points: 300 },
+    { order_name: 'CUARTO ORDEN', required_points: 400 },
+    { order_name: 'QUINTO ORDEN', required_points: 500 },
+    { order_name: 'SEXTO ORDEN', required_points: 600 }
+  ];
+
+  for (const orderData of orders) {
+    const order = this.catalogoOrdenRepository.create(orderData);
+    await this.catalogoOrdenRepository.save(order);
+    console.log(`   - Orden creada: ${orderData.order_name} (${orderData.required_points} puntos)`);
+  }
+}
 
   // Método público para ejecutar seeding manualmente
   async runSeeding() {
