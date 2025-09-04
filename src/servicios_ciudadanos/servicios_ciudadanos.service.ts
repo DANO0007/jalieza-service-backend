@@ -11,6 +11,7 @@ import { Repository } from 'typeorm';
 import { ServiciosCiudadano } from './entities/servicios_ciudadano.entity';
 import { Ciudadanos } from 'src/ciudadanos/entities/ciudadano.entity';
 import { CatalogoServicio } from 'src/catalogo_servicios/entities/catalogo_servicio.entity';
+import { PointsManagementService } from 'src/ciudadanos/services/points-management.service';
 export enum TerminationStatus {
   completed = 'completado',
   in_progress = 'en_curso',
@@ -28,6 +29,8 @@ export class ServiciosCiudadanosService {
 
     @InjectRepository(CatalogoServicio)
     private readonly catalogoServicioRepository: Repository<CatalogoServicio>,
+
+    private readonly pointsManagementService: PointsManagementService,
   ) {}
 
 // ✅ CREAR NUEVO SERVICIO
@@ -49,6 +52,13 @@ async create(createDto: CreateServiciosCiudadanoDto) {
   if (!catalogo) {
     throw new BadRequestException(
       `Servicio con id ${createDto.service_id} no existe`,
+    );
+  }
+
+  const canAccessOrden = await this.pointsManagementService.canAccessOrden(createDto.ciudadano_id, catalogo.order.id);
+  if (!canAccessOrden) {
+    throw new BadRequestException(
+      `El ciudadano no puede acceder a este servicio`,
     );
   }
 
@@ -88,10 +98,10 @@ async create(createDto: CreateServiciosCiudadanoDto) {
     rest_period_end: restPeriodEnd,
   });
 
+  await this.pointsManagementService.addPuntos(createDto.ciudadano_id, catalogo.order.id);
+
   return await this.serviciosRepository.save(nuevoServicio);
 }
-
-
 
   // 🟡 OBTENER TODOS (opcional, aún sin implementar)
   findAll() {

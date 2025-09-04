@@ -83,12 +83,12 @@ export class SeedingService implements OnModuleInit {
   }
   private async createDefaultOrders() {
   const orders = [
-    { order_name: 'PRIMER ORDEN', required_points: 100 },
-    { order_name: 'SEGUNDO ORDEN', required_points: 200 },
-    { order_name: 'TERCER ORDEN', required_points: 300 },
-    { order_name: 'CUARTO ORDEN', required_points: 400 },
-    { order_name: 'QUINTO ORDEN', required_points: 500 },
-    { order_name: 'SEXTO ORDEN', required_points: 600 }
+    { order_name: 'PRIMER ORDEN', required_points: 0},
+    { order_name: 'SEGUNDO ORDEN', required_points: 100 },
+    { order_name: 'TERCER ORDEN', required_points: 200 },
+    { order_name: 'CUARTO ORDEN', required_points: 300 },
+    { order_name: 'QUINTO ORDEN', required_points: 400 },
+    { order_name: 'SEXTO ORDEN', required_points: 500 }
   ];
 
   for (const orderData of orders) {
