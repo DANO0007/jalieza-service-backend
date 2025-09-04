@@ -54,6 +54,16 @@ export class CiudadanosController {
     return this.ciudadanosService.findOne(+id);
   }
 
+  @Get(':id/ordenes-disponibles')
+  getOrdenesDisponibles(@Param('id') id: string) {
+    return this.ciudadanosService.getOrdenesDisponibles(+id);
+  }
+
+  @Get(':id/puntos')
+  getPuntosCiudadano(@Param('id') id: string) {
+    return this.ciudadanosService.getPuntosCiudadano(+id);
+  }
+
   @Patch(':id')
   update(
     @Param('id') id: string,

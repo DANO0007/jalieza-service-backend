@@ -12,11 +12,7 @@ import { ServiciosCiudadano } from './entities/servicios_ciudadano.entity';
 import { Ciudadanos } from 'src/ciudadanos/entities/ciudadano.entity';
 import { CatalogoServicio } from 'src/catalogo_servicios/entities/catalogo_servicio.entity';
 import { PointsManagementService } from 'src/ciudadanos/services/points-management.service';
-export enum TerminationStatus {
-  completed = 'completado',
-  in_progress = 'en_curso',
-  unfinished = 'inconcluso'
-}
+import { TerminationStatus } from './enums/termination-status.enum';
 
 @Injectable()
 export class ServiciosCiudadanosService {
@@ -98,7 +94,10 @@ async create(createDto: CreateServiciosCiudadanoDto) {
     rest_period_end: restPeriodEnd,
   });
 
-  await this.pointsManagementService.addPuntos(createDto.ciudadano_id, catalogo.order.id);
+  // Solo asignar puntos si el servicio está completado
+  if (createDto.termination_status === TerminationStatus.completed) {
+    await this.pointsManagementService.addPuntos(createDto.ciudadano_id, catalogo.order.id);
+  }
 
   return await this.serviciosRepository.save(nuevoServicio);
 }
@@ -152,6 +151,7 @@ async create(createDto: CreateServiciosCiudadanoDto) {
     : cargo.end_date;
 
   const nuevoStatus = updateDto.termination_status ?? cargo.termination_status;
+  const statusAnterior = cargo.termination_status;
   cargo.termination_status = nuevoStatus;
 
   cargo.observations = updateDto.observations ?? cargo.observations;
@@ -164,6 +164,21 @@ async create(createDto: CreateServiciosCiudadanoDto) {
   } else {
     // Si cambia a otro status, anulamos el descanso
     cargo.rest_period_end = null;
+  }
+
+  // 🎯 LÓGICA DE PUNTOS: Manejar cambios de estado
+  if (statusAnterior !== nuevoStatus) {
+    const ordenId = cargo.catalogoServicio.order.id;
+    
+    // Si cambia de cualquier estado a 'completado' → Asignar puntos
+    if (nuevoStatus === TerminationStatus.completed && statusAnterior !== TerminationStatus.completed) {
+      await this.pointsManagementService.addPuntos(cargo.citizen.id, ordenId);
+    }
+    
+    // Si cambia de 'completado' a otro estado → Remover puntos
+    if (statusAnterior === TerminationStatus.completed && nuevoStatus !== TerminationStatus.completed) {
+      await this.pointsManagementService.removePuntos(cargo.citizen.id, ordenId);
+    }
   }
 
   await this.serviciosRepository.save(cargo);

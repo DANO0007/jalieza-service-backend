@@ -1,5 +1,5 @@
 import { IsDateString, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString } from 'class-validator';
-import { TerminationStatus } from '../entities/servicios_ciudadano.entity';
+import { TerminationStatus } from '../enums/termination-status.enum';
 
 export class CreateServiciosCiudadanoDto {
   @IsInt()

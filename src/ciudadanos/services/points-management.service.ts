@@ -36,18 +36,26 @@ export class PointsManagementService {
   }
 
   /**
+   * Obtiene el total de puntos acumulados de un ciudadano
+   */
+  async getTotalPuntos(ciudadanoId: number): Promise<number> {
+    const puntos = await this.getPuntosByCiudadano(ciudadanoId);
+    return puntos.reduce((sum, p) => sum + p.puntos_acumulados, 0);
+  }
+
+  /**
    * Obtiene las órdenes disponibles para un ciudadano
    */
   async getOrdenesDisponibles(ciudadanoId: number): Promise<CatalogoOrden[]> {
     const puntos = await this.getPuntosByCiudadano(ciudadanoId);
     const totalPuntos = puntos.reduce((sum, p) => sum + p.puntos_acumulados, 0);
 
-    return await this.catalogoOrdenRepository.find({
-      where: {
-        required_points: totalPuntos >= 0 ? 0 : undefined, // Lógica simplificada por ahora
-      },
-      order: { required_points: 'ASC' },
-    });
+    return await this.catalogoOrdenRepository
+      .createQueryBuilder('orden')
+      .leftJoinAndSelect('orden.services', 'services')
+      .where('orden.required_points <= :totalPuntos', { totalPuntos })
+      .orderBy('orden.required_points', 'ASC')
+      .getMany();
   }
 
   /**
@@ -92,5 +100,34 @@ export class PointsManagementService {
     }
 
     await this.ciudadanoPuntosRepository.save(ciudadanoPuntos);
+  }
+
+  /**
+   * Remueve puntos de un ciudadano (cuando cambia de completado a otro estado)
+   */
+  async removePuntos(ciudadanoId: number, ordenId: number): Promise<void> {
+    const puntosToRemove = this.PUNTOS_POR_ORDEN[ordenId] || 0;
+    
+    if (puntosToRemove === 0) return;
+
+    // Buscar el registro de puntos para esta orden
+    const ciudadanoPuntos = await this.ciudadanoPuntosRepository.findOne({
+      where: {
+        ciudadano: { id: ciudadanoId },
+        orden: { id: ordenId },
+      },
+    });
+
+    if (ciudadanoPuntos) {
+      // Restar los puntos
+      ciudadanoPuntos.puntos_acumulados = Math.max(0, ciudadanoPuntos.puntos_acumulados - puntosToRemove);
+      
+      // Si los puntos llegan a 0, eliminar el registro
+      if (ciudadanoPuntos.puntos_acumulados === 0) {
+        await this.ciudadanoPuntosRepository.remove(ciudadanoPuntos);
+      } else {
+        await this.ciudadanoPuntosRepository.save(ciudadanoPuntos);
+      }
+    }
   }
 }

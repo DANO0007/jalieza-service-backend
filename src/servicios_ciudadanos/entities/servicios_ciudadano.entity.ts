@@ -1,5 +1,6 @@
 import { CatalogoServicio } from "src/catalogo_servicios/entities/catalogo_servicio.entity";
 import { Ciudadanos } from "src/ciudadanos/entities/ciudadano.entity";
+import { TerminationStatus } from "../enums/termination-status.enum";
 import {
   Column,
   CreateDateColumn,
@@ -10,12 +11,6 @@ import {
   UpdateDateColumn,
   PrimaryGeneratedColumn,
 } from "typeorm";
-
-export enum TerminationStatus {
-  completed = 'completado',
-  in_progress = 'en_curso',
-  unfinished = 'inconcluso'
-}
 
 @Entity()
 export class ServiciosCiudadano {

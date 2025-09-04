@@ -17,6 +17,7 @@ import {
 import { CiudadanoResponse, CiudadanoListResponse, CiudadanoCreateResponse,CiudadanoUpdateResponse } from './interfaces/ciudadano-response.interface';
 import { calculateAge, formatDateOnly, validateBirthDate } from './utils/date-validator.util';
 import { MaritalStatusService } from './services/marital-status.service';
+import { PointsManagementService } from './services/points-management.service';
 
 
 @Injectable()
@@ -25,6 +26,7 @@ export class CiudadanosService {
     @InjectRepository(Ciudadanos)
     private readonly ciudadanosRepository: Repository<Ciudadanos>,
     private readonly maritalStatusService: MaritalStatusService,
+    private readonly pointsManagementService: PointsManagementService,
   ) {}
 
   //Valida si el ciudadano ya existe
@@ -368,4 +370,23 @@ export class CiudadanosService {
   /* async restaurarCiudadano(id: number) {
     return await this.ciudadanosRepository.restore(id);
   } */ 
+
+  // ✅ Obtener órdenes disponibles para un ciudadano
+  async getOrdenesDisponibles(ciudadanoId: number) {
+    return await this.pointsManagementService.getOrdenesDisponibles(ciudadanoId);
+  }
+
+  // ✅ Obtener puntos de un ciudadano
+  async getPuntosCiudadano(ciudadanoId: number) {
+    const puntos = await this.pointsManagementService.getPuntosByCiudadano(ciudadanoId);
+    const totalPuntos = await this.pointsManagementService.getTotalPuntos(ciudadanoId);
+    
+    return {
+      totalPuntos,
+      puntosPorOrden: puntos.map(p => ({
+        orden: p.orden.order_name,
+        puntos: p.puntos_acumulados
+      }))
+    };
+  }
 }
