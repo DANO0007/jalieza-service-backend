@@ -1,6 +1,6 @@
 import { CatalogoServicio } from "src/catalogo_servicios/entities/catalogo_servicio.entity";
 import { Ciudadanos } from "src/ciudadanos/entities/ciudadano.entity";
-import { TerminationStatus } from "../enums/termination-status.enum";
+import { ServiceStatus } from "../enums/service-status.enum";
 import {
   Column,
   CreateDateColumn,
@@ -36,10 +36,10 @@ rest_period_end: Date; // o descanso_termina_en si prefieres en español
   @Column({
     nullable: true,
     type: 'enum',
-    enum: TerminationStatus,
-    default: TerminationStatus.completed,
+    enum: ServiceStatus,
+    default: ServiceStatus.completed,
   })
-  termination_status: TerminationStatus;
+  service_status: ServiceStatus;
 
   @Column({ nullable: true })
   observations: string;

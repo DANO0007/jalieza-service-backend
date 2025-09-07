@@ -216,11 +216,11 @@ export class CiudadanosService {
       services:
         c.services?.map((s) => ({
           id: s.id,
-          service_name: s.catalogoServicio?.service_name || 'Sin nombre',
-          start_date: s.start_date,
-          end_date: s.end_date,
-          termination_status: s.termination_status,
-          observations: s.observations,
+        service_name: s.catalogoServicio?.service_name || 'Sin nombre',
+        start_date: s.start_date,
+        end_date: s.end_date,
+        service_status: s.service_status,
+        observations: s.observations,
         })) || [],
       candidatoACargo: null,
     }));
@@ -266,7 +266,7 @@ export class CiudadanosService {
         service_name: s.catalogoServicio?.service_name || 'Sin nombre',
         start_date: s.start_date,
         end_date: s.end_date,
-        termination_status: s.termination_status,
+        service_status: s.service_status,
         observations: s.observations,
       })) || [],
     candidatoACargo: null,
@@ -385,7 +385,7 @@ export class CiudadanosService {
       totalPuntos,
       puntosPorOrden: puntos.map(p => ({
         orden: p.orden.order_name,
-        puntos: p.puntos_acumulados
+        puntos: p.puntos
       }))
     };
   }

@@ -24,7 +24,7 @@ export interface CiudadanoListResponse extends CiudadanoResponse {
     service_name: string;
     start_date: Date;
     end_date: Date;
-    termination_status: string;
+    service_status: string;
     observations?: string;
   }>;
   candidatoACargo?: any;

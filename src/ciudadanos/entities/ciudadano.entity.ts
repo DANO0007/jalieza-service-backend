@@ -11,7 +11,6 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { MaritalStatus } from '../enums/marital-status.enum';
-import { CiudadanoPuntos } from './ciudadano-puntos.entity';
 
 @Entity()
 export class Ciudadanos {
@@ -62,8 +61,4 @@ export class Ciudadanos {
   })
   services: ServiciosCiudadano[];
 
-  @OneToMany(() => CiudadanoPuntos, (punto) => punto.ciudadano, {
-    nullable: true,
-  })
-  puntos: CiudadanoPuntos[];
 }

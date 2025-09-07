@@ -24,11 +24,6 @@ export class CiudadanosController {
     return this.ciudadanosService.createCiudadano(createCiudadanoDto);
   }
 
- /*  @Post('check-duplicate')
-  checkDuplicate(@Body() checkDuplicateDto: CheckDuplicateCiudadanoDto) {
-    return this.ciudadanosService.checkDuplicate(checkDuplicateDto);
-  } */
-
   @Get('marital-statuses')
   getMaritalStatuses() {
     return this.ciudadanosService.getMaritalStatuses();

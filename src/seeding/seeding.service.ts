@@ -10,6 +10,40 @@ import * as bcryptjs from 'bcryptjs';
 export class SeedingService implements OnModuleInit {
   private readonly logger = new Logger(SeedingService.name);
   
+  // ✅ Configuración centralizada de órdenes
+  private readonly ORDENES_CONFIG = {
+    1: { 
+      name: 'PRIMER ORDEN', 
+      required_points: 0, 
+      puntos_por_servicio: 10 
+    },
+    2: { 
+      name: 'SEGUNDO ORDEN', 
+      required_points: 20, 
+      puntos_por_servicio: 10 
+    },
+    3: { 
+      name: 'TERCER ORDEN', 
+      required_points: 30, 
+      puntos_por_servicio: 10 
+    },
+    4: { 
+      name: 'CUARTO ORDEN', 
+      required_points: 40, 
+      puntos_por_servicio: 10
+    },
+    5: { 
+      name: 'QUINTO ORDEN', 
+      required_points: 50, 
+      puntos_por_servicio: 40 
+    },
+    6: { 
+      name: 'SEXTO ORDEN', 
+      required_points: 60, 
+      puntos_por_servicio: 10 
+    }
+  };
+  
   constructor(
     @InjectRepository(Rol)
     private readonly rolRepository: Repository<Rol>,
@@ -137,33 +171,32 @@ export class SeedingService implements OnModuleInit {
     this.logger.log('   ✅ Usuario admin creado: admin@admin.com / admin123');
   }
   private async createDefaultOrders() {
-  const orders = [
-    { order_name: 'PRIMER ORDEN', required_points: 0},
-    { order_name: 'SEGUNDO ORDEN', required_points: 100 },
-    { order_name: 'TERCER ORDEN', required_points: 200 },
-    { order_name: 'CUARTO ORDEN', required_points: 300 },
-    { order_name: 'QUINTO ORDEN', required_points: 400 },
-    { order_name: 'SEXTO ORDEN', required_points: 500 }
-  ];
-
-  for (const orderData of orders) {
+    for (const [ordenId, config] of Object.entries(this.ORDENES_CONFIG)) {
       const existingOrder = await this.catalogoOrdenRepository.findOne({
-        where: { order_name: orderData.order_name }
+        where: { order_name: config.name }
       });
       
       if (!existingOrder) {
-        const order = this.catalogoOrdenRepository.create(orderData);
+        const order = this.catalogoOrdenRepository.create({
+          order_name: config.name,
+          required_points: config.required_points
+        });
         await this.catalogoOrdenRepository.save(order);
-        this.logger.log(`   ✅ Orden creada: ${orderData.order_name} (${orderData.required_points} puntos)`);
+        this.logger.log(`   ✅ Orden creada: ${config.name} (${config.required_points} puntos requeridos)`);
       } else {
-        this.logger.log(`   ⏭️  Orden ya existe: ${orderData.order_name}`);
+        this.logger.log(`   ⏭️  Orden ya existe: ${config.name}`);
       }
     }
-}
+  }
 
   // Método público para ejecutar seeding manualmente
   async runSeeding() {
     this.logger.log('🔄 Ejecutando seeding manual...');
     await this.seedDatabase();
+  }
+
+  // ✅ Método para obtener la configuración de puntos
+  getOrdenesConfig() {
+    return this.ORDENES_CONFIG;
   }
 }

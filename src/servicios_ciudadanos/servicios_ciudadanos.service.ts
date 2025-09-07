@@ -12,7 +12,7 @@ import { ServiciosCiudadano } from './entities/servicios_ciudadano.entity';
 import { Ciudadanos } from 'src/ciudadanos/entities/ciudadano.entity';
 import { CatalogoServicio } from 'src/catalogo_servicios/entities/catalogo_servicio.entity';
 import { PointsManagementService } from 'src/ciudadanos/services/points-management.service';
-import { TerminationStatus } from './enums/termination-status.enum';
+import { ServiceStatus } from './enums/service-status.enum';
 
 @Injectable()
 export class ServiciosCiudadanosService {
@@ -59,11 +59,11 @@ async create(createDto: CreateServiciosCiudadanoDto) {
   }
 
   // 🚨 VALIDACIÓN para impedir más de un cargo "EnCurso"
-  if (createDto.termination_status === TerminationStatus.in_progress) {
+  if (createDto.service_status === ServiceStatus.in_progress) {
     const cargosEnCurso = await this.serviciosRepository.find({
       where: {
         citizen: { id: createDto.ciudadano_id },
-        termination_status: TerminationStatus.in_progress,
+        service_status: ServiceStatus.in_progress,
       },
     });
 
@@ -79,7 +79,7 @@ async create(createDto: CreateServiciosCiudadanoDto) {
   const endDate = new Date(createDto.end_date);
   let restPeriodEnd: Date | null = null;
 
-  if (createDto.termination_status === TerminationStatus.completed) {
+  if (createDto.service_status === ServiceStatus.completed) {
     restPeriodEnd = new Date(endDate);
     restPeriodEnd.setFullYear(restPeriodEnd.getFullYear() + 2); // +2 años
   }
@@ -89,15 +89,11 @@ async create(createDto: CreateServiciosCiudadanoDto) {
     catalogoServicio: catalogo,
     start_date: startDate,
     end_date: endDate,
-    termination_status: createDto.termination_status,
+    service_status: createDto.service_status,
     observations: createDto.observations || '',
     rest_period_end: restPeriodEnd,
   });
 
-  // Solo asignar puntos si el servicio está completado
-  if (createDto.termination_status === TerminationStatus.completed) {
-    await this.pointsManagementService.addPuntos(createDto.ciudadano_id, catalogo.order.id);
-  }
 
   return await this.serviciosRepository.save(nuevoServicio);
 }
@@ -150,14 +146,33 @@ async create(createDto: CreateServiciosCiudadanoDto) {
     ? new Date(updateDto.end_date)
     : cargo.end_date;
 
-  const nuevoStatus = updateDto.termination_status ?? cargo.termination_status;
-  const statusAnterior = cargo.termination_status;
-  cargo.termination_status = nuevoStatus;
-
+  const nuevoStatus = updateDto.service_status ?? cargo.service_status;
+  const statusAnterior = cargo.service_status;
+  
+  // ✅ VALIDACIÓN: Si se cambia a "completado", la fecha de finalización es obligatoria
+  if (nuevoStatus === ServiceStatus.completed && statusAnterior !== ServiceStatus.completed) {
+    const fechaFinalizacion = updateDto.end_date ? new Date(updateDto.end_date) : cargo.end_date;
+    
+    if (!fechaFinalizacion) {
+      throw new BadRequestException(
+        'La fecha de finalización es obligatoria cuando se marca el servicio como completado'
+      );
+    }
+    
+    // Validar que la fecha de finalización no sea anterior a la fecha de inicio
+    const fechaInicio = cargo.start_date;
+    if (fechaInicio && fechaFinalizacion < fechaInicio) {
+      throw new BadRequestException(
+        'La fecha de finalización no puede ser anterior a la fecha de inicio'
+      );
+    }
+  }
+  
+  cargo.service_status = nuevoStatus;
   cargo.observations = updateDto.observations ?? cargo.observations;
 
   // 🚀 Lógica para calcular rest_period_end
-  if (nuevoStatus === 'completado' && cargo.end_date) {
+  if (nuevoStatus === ServiceStatus.completed && cargo.end_date) {
     const finDescanso = new Date(cargo.end_date);
     finDescanso.setFullYear(finDescanso.getFullYear() + 2);
     cargo.rest_period_end = finDescanso;
@@ -166,21 +181,7 @@ async create(createDto: CreateServiciosCiudadanoDto) {
     cargo.rest_period_end = null;
   }
 
-  // 🎯 LÓGICA DE PUNTOS: Manejar cambios de estado
-  if (statusAnterior !== nuevoStatus) {
-    const ordenId = cargo.catalogoServicio.order.id;
     
-    // Si cambia de cualquier estado a 'completado' → Asignar puntos
-    if (nuevoStatus === TerminationStatus.completed && statusAnterior !== TerminationStatus.completed) {
-      await this.pointsManagementService.addPuntos(cargo.citizen.id, ordenId);
-    }
-    
-    // Si cambia de 'completado' a otro estado → Remover puntos
-    if (statusAnterior === TerminationStatus.completed && nuevoStatus !== TerminationStatus.completed) {
-      await this.pointsManagementService.removePuntos(cargo.citizen.id, ordenId);
-    }
-  }
-
   await this.serviciosRepository.save(cargo);
   return { message: 'Actualización exitosa' };
 }
