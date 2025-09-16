@@ -376,17 +376,34 @@ export class CiudadanosService {
     return await this.pointsManagementService.getOrdenesDisponibles(ciudadanoId);
   }
 
-  // ✅ Obtener puntos de un ciudadano
+  // ✅ Obtener puntos de un ciudadano (INCLUYE puntos de la pareja si está casado)
   async getPuntosCiudadano(ciudadanoId: number) {
-    const puntos = await this.pointsManagementService.getPuntosByCiudadano(ciudadanoId);
-    const totalPuntos = await this.pointsManagementService.getTotalPuntos(ciudadanoId);
+    const [puntos, totalPuntos, ciudadano] = await Promise.all([
+      this.pointsManagementService.getPuntosByCiudadano(ciudadanoId),
+      this.pointsManagementService.getTotalPuntos(ciudadanoId),
+      this.ciudadanosRepository.findOne({
+        where: { id: ciudadanoId },
+        relations: ['partner']
+      })
+    ]);
     
-    return {
+    const response = {
       totalPuntos,
       puntosPorOrden: puntos.map(p => ({
         orden: p.orden.order_name,
         puntos: p.puntos
-      }))
+      })),
+      // ✅ NUEVO: Información sobre si está casado y comparte puntos
+      esCasado: ciudadano?.marital_status === MaritalStatus.CASADO,
+      pareja: ciudadano?.partner ? {
+        id: ciudadano.partner.id,
+        nombre: `${ciudadano.partner.name} ${ciudadano.partner.last_name_father}`
+      } : null,
+      mensaje: ciudadano?.marital_status === MaritalStatus.CASADO && ciudadano?.partner 
+        ? 'Los puntos mostrados incluyen los de tu pareja' 
+        : 'Puntos individuales'
     };
+
+    return response;
   }
 }
