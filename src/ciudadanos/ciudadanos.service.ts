@@ -160,6 +160,13 @@ export class CiudadanosService {
 
     const saved = await this.ciudadanosRepository.save(nuevoCiudadano);
 
+    // ✅ NUEVO: Si está casado, actualizar el estado civil de la pareja
+    if (marital_status === MaritalStatus.CASADO && partnerEntity) {
+      partnerEntity.marital_status = MaritalStatus.CASADO;
+      partnerEntity.partner = saved; // Establecer la relación bidireccional
+      await this.ciudadanosRepository.save(partnerEntity);
+    }
+
     return {
       message: 'Ciudadano registrado exitosamente',
       data: {
