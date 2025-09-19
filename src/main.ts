@@ -24,7 +24,7 @@ async function bootstrap() {
   app.use(cookieParser()); // ✅ Habilita cookies
 
   app.enableCors({
-    origin: ['http://localhost:4200', 'https://api.jalieza.com.mx'], // ⚠️ Cambia esto si usas otro frontend
+    origin: ['http://localhost:4200', 'https://registro-ciudadano.jalieza.com.mx'], // ⚠️ Cambia esto si usas otro frontend
     credentials: true, // ✅ Permite enviar cookies entre frontend y backend
   });
 
