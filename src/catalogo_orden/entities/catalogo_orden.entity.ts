@@ -12,6 +12,9 @@ export class CatalogoOrden {
   @Column({ nullable: false })
   required_points: number;
 
-  @OneToMany(() => CatalogoServicio, servicio => servicio.order)
+  @OneToMany(() => CatalogoServicio, servicio => servicio.order, {
+    cascade: true,
+    onDelete: 'CASCADE',
+  })
   services: CatalogoServicio[];
 }
