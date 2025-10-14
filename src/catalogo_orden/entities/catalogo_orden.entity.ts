@@ -1,4 +1,4 @@
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import { Column, CreateDateColumn, UpdateDateColumn, DeleteDateColumn, Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 import { CatalogoServicio } from './../../catalogo_servicios/entities/catalogo_servicio.entity';
 
 @Entity()
@@ -17,4 +17,13 @@ export class CatalogoOrden {
     onDelete: 'CASCADE',
   })
   services: CatalogoServicio[];
+
+  @CreateDateColumn()
+    created_at: Date;
+  
+    @UpdateDateColumn()
+    updated_at: Date;
+  
+    @DeleteDateColumn()
+    deleted_at: Date;
 }
