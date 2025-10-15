@@ -3,7 +3,7 @@ export enum MaritalStatus {
   CASADO = 2,
 }
 
-export const MaritalStatusLabels = {
+/* export const MaritalStatusLabels = {
   [MaritalStatus.SOLTERO]: 'Soltero',
   [MaritalStatus.CASADO]: 'Casado',
-};
+}; */

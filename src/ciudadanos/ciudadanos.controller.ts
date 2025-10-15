@@ -11,7 +11,6 @@ import {
 import { CiudadanosService } from './ciudadanos.service';
 import { CreateCiudadanoDto } from './dto/create-ciudadano.dto';
 import { UpdateCiudadanoDto } from './dto/update-ciudadano.dto';
-import { CheckDuplicateCiudadanoDto } from './dto/check-duplicate.dto';
 import { SearchCiudadanoDto } from './dto/search-ciudadano.dto';
 import { AuthGuard } from 'src/auth/guard/auth.guard';
 

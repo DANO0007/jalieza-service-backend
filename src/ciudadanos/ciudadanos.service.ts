@@ -10,10 +10,7 @@ import { CheckDuplicateCiudadanoDto } from './dto/check-duplicate.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Ciudadanos } from './entities/ciudadano.entity';
 import { Repository } from 'typeorm';
-import {
-  MaritalStatus,
-  MaritalStatusLabels,
-} from './enums/marital-status.enum';
+import { MaritalStatus } from './enums/marital-status.enum';
 import { CiudadanoResponse, CiudadanoListResponse, CiudadanoCreateResponse,CiudadanoUpdateResponse } from './interfaces/ciudadano-response.interface';
 import { calculateAge, formatDateOnly, validateBirthDate } from './utils/date-validator.util';
 import { MaritalStatusService } from './services/marital-status.service';
@@ -35,72 +32,62 @@ export class CiudadanosService {
 
     const existingCiudadano = await this.ciudadanosRepository.findOne({
       where: {
-        name: name.trim(),
-        last_name_father: last_name_father.trim(),
-        ...(last_name_mother && { last_name_mother: last_name_mother.trim() }),
+        name,
+        last_name_father,
+        //la estructura ...(condición && { clave: valor }) agrega la clave solo si la condición es verdadera
+        ...(last_name_mother && { last_name_mother}),
       },
       withDeleted: false,
     });
 
+    const isDuplicate = Boolean(existingCiudadano);
+
     return {
-    isDuplicate: !!existingCiudadano,
-    existingCiudadano: existingCiudadano
-      ? {
-          id: existingCiudadano.id,
-          name: existingCiudadano.name,
-          last_name_father: existingCiudadano.last_name_father,
-          last_name_mother: existingCiudadano.last_name_mother,
-          marital_status: existingCiudadano.marital_status,
-          birth_date: formatDateOnly(existingCiudadano.birth_date),
-          age: calculateAge(existingCiudadano.birth_date),
-        }
+      isDuplicate,
+      existingCiudadano: isDuplicate 
+      ? this.mapCiudadanoToBaseResponse(existingCiudadano)
       : null,
-  };
+    };
   }
 
   //Obtiene los estados civiles
   getMaritalStatuses() {
     return [
-      { id: MaritalStatus.SOLTERO, label: MaritalStatusLabels[MaritalStatus.SOLTERO] },
-      { id: MaritalStatus.CASADO, label: MaritalStatusLabels[MaritalStatus.CASADO] },
-    ];
+    MaritalStatus.SOLTERO,
+    MaritalStatus.CASADO,
+  ];
   }
 
   //Busca ciudadanos por nombre, apellido paterno, apellido materno
-  async searchCiudadanos(query: string) {
-    if (!query || query.trim().length < 2) {
-      return [];
-    }
+  async searchCiudadanos(query: string, limit: number = 20) {
+  const sanitizedQuery = this.sanitizeSearchQuery(query);
+  if (!sanitizedQuery) return [];
 
-    const ciudadanos = await this.ciudadanosRepository
-      .createQueryBuilder('ciudadano')
-      .where(
-        'ciudadano.name ILIKE :query OR ciudadano.last_name_father ILIKE :query OR ciudadano.last_name_mother ILIKE :query',
-        { query: `%${query.trim()}%` },
-      )
-      .andWhere('ciudadano.deleted_at IS NULL')
-      .select([
-        'ciudadano.id',
-        'ciudadano.name',
-        'ciudadano.last_name_father',
-        'ciudadano.last_name_mother',
-        'ciudadano.marital_status',
-      ])
-      .limit(10)
-      .getMany();
+  const ciudadanos = await this.ciudadanosRepository
+    .createQueryBuilder('ciudadano')
+    .where(
+      'ciudadano.name ILIKE :query OR ciudadano.last_name_father ILIKE :query OR ciudadano.last_name_mother ILIKE :query',
+      { query: `%${sanitizedQuery}%` },
+    )
+    .andWhere('ciudadano.deleted_at IS NULL')
+    .select([
+      'ciudadano.id',
+      'ciudadano.name',
+      'ciudadano.last_name_father',
+      'ciudadano.last_name_mother',
+      'ciudadano.marital_status',
+      'ciudadano.birth_date',
+      'ciudadano.phone',
+      'ciudadano.comment',
+    ])
+    .limit(Math.min(limit, 50))
+    .getMany();
 
-    return ciudadanos.map((c) => ({
-      id: c.id,
-      name: c.name,
-      last_name_father: c.last_name_father,
-      last_name_mother: c.last_name_mother,
-      marital_status: c.marital_status,
-      birth_date: formatDateOnly(c.birth_date),
-      age: calculateAge(c.birth_date),
-      full_name:
-        `${c.name} ${c.last_name_father} ${c.last_name_mother || ''}`.trim(),
-    }));
-  }
+  return ciudadanos.map((c) => ({
+    ...this.mapCiudadanoToBaseResponse(c),
+    full_name: this.buildFullName(c.name, c.last_name_father, c.last_name_mother),
+  }));
+}
 
   //Registra un nuevo ciudadano
   async createCiudadano(dto: CreateCiudadanoDto): Promise<CiudadanoCreateResponse> {
@@ -160,7 +147,7 @@ export class CiudadanosService {
 
     const saved = await this.ciudadanosRepository.save(nuevoCiudadano);
 
-    // ✅ NUEVO: Si está casado, actualizar el estado civil de la pareja
+    //Si está casado, actualizar el estado civil de la pareja
     if (marital_status === MaritalStatus.CASADO && partnerEntity) {
       partnerEntity.marital_status = MaritalStatus.CASADO;
       partnerEntity.partner = saved; // Establecer la relación bidireccional
@@ -170,24 +157,9 @@ export class CiudadanosService {
     return {
       message: 'Ciudadano registrado exitosamente',
       data: {
-        id: saved.id,
-        name: saved.name,
-        last_name_father: saved.last_name_father,
-        last_name_mother: saved.last_name_mother,
-        comment: saved.comment,
-        birth_date: formatDateOnly(saved.birth_date),
-        age: calculateAge(saved.birth_date),
-        phone: saved.phone,
-        marital_status: saved.marital_status,
-        partner: saved.partner
-          ? {
-              id: saved.partner.id,
-              name: saved.partner.name,
-              last_name_father: saved.partner.last_name_father,
-              last_name_mother: saved.partner.last_name_mother,
-            }
-          : null,
-      },
+      ...this.mapCiudadanoToBaseResponse(saved),
+      partner: this.mapPartnerInfo(saved.partner),
+    },
     };
   }
 
@@ -198,39 +170,7 @@ export class CiudadanosService {
       withDeleted: includeDeleted,
     });
 
-    return ciudadanos.map((c): CiudadanoListResponse => ({
-      id: c.id,
-      name: c.name,
-      last_name_father: c.last_name_father,
-      last_name_mother: c.last_name_mother,
-      comment: c.comment,
-      birth_date: formatDateOnly(c.birth_date),
-      age: calculateAge(c.birth_date),
-      phone: c.phone,
-      marital_status: c.marital_status || null,
-      partner: c.partner
-        ? {
-            id: c.partner.id,
-            name: c.partner.name,
-            last_name_father: c.partner.last_name_father,
-            last_name_mother: c.partner.last_name_mother,
-          }
-        : null,
-      ...(includeDeleted && {
-        visible: !c.deleted_at,
-        deleted_at: c.deleted_at,
-      }),
-      services:
-        c.services?.map((s) => ({
-          id: s.id,
-        service_name: s.catalogoServicio?.service_name || 'Sin nombre',
-        start_date: s.start_date,
-        end_date: s.end_date,
-        service_status: s.service_status,
-        observations: s.observations,
-        })) || [],
-      candidatoACargo: null,
-    }));
+    return ciudadanos.map(c => this.mapCiudadanoToFullResponse(c, includeDeleted));
   }
 
   //Obtiene un ciudadano por id
@@ -245,39 +185,7 @@ export class CiudadanosService {
       throw new NotFoundException(`Citizen with id ${id} not found`);
     }
 
-    return {
-    id: ciudadano.id,
-    name: ciudadano.name,
-    last_name_father: ciudadano.last_name_father,
-    last_name_mother: ciudadano.last_name_mother,
-    comment: ciudadano.comment,
-    birth_date: formatDateOnly(ciudadano.birth_date),
-    age: calculateAge(ciudadano.birth_date),
-    phone: ciudadano.phone,
-    marital_status: ciudadano.marital_status || null,
-    partner: ciudadano.partner
-      ? {
-          id: ciudadano.partner.id,
-          name: ciudadano.partner.name,
-          last_name_father: ciudadano.partner.last_name_father,
-          last_name_mother: ciudadano.partner.last_name_mother,
-        }
-      : null,
-    ...(includeDeleted && {
-      visible: !ciudadano.deleted_at,
-      deleted_at: ciudadano.deleted_at,
-    }),
-    services:
-      ciudadano.services?.map((s) => ({
-        id: s.id,
-        service_name: s.catalogoServicio?.service_name || 'Sin nombre',
-        start_date: s.start_date,
-        end_date: s.end_date,
-        service_status: s.service_status,
-        observations: s.observations,
-      })) || [],
-    candidatoACargo: null,
-  };
+     return this.mapCiudadanoToFullResponse(ciudadano, includeDeleted);
   }
 
   //Actualiza un ciudadano
@@ -316,23 +224,8 @@ export class CiudadanosService {
     const saved = await this.ciudadanosRepository.save(ciudadano);
 
     const response: CiudadanoResponse = {
-    id: saved.id,
-    name: saved.name,
-    last_name_father: saved.last_name_father,
-    last_name_mother: saved.last_name_mother,
-    comment: saved.comment,
-    birth_date: formatDateOnly(saved.birth_date),
-    age: calculateAge(saved.birth_date),
-    phone: saved.phone,
-    marital_status: saved.marital_status,
-    partner: saved.partner
-      ? {
-          id: saved.partner.id,
-          name: saved.partner.name,
-          last_name_father: saved.partner.last_name_father,
-          last_name_mother: saved.partner.last_name_mother,
-        }
-      : null,
+    ...this.mapCiudadanoToBaseResponse(saved),
+    partner: this.mapPartnerInfo(saved.partner),
   };
 
   return {
@@ -378,12 +271,12 @@ export class CiudadanosService {
     return await this.ciudadanosRepository.restore(id);
   } */ 
 
-  // ✅ Obtener órdenes disponibles para un ciudadano
+  // Obtener órdenes disponibles para un ciudadano ----------------------------------------------------------------------------------
   async getOrdenesDisponibles(ciudadanoId: number) {
     return await this.pointsManagementService.getOrdenesDisponibles(ciudadanoId);
   }
 
-  // ✅ Obtener puntos de un ciudadano (INCLUYE puntos de la pareja si está casado)
+  // Obtener puntos de un ciudadano (INCLUYE puntos de la pareja si está casado)
   async getPuntosCiudadano(ciudadanoId: number) {
     const [puntos, totalPuntos, ciudadano] = await Promise.all([
       this.pointsManagementService.getPuntosByCiudadano(ciudadanoId),
@@ -412,5 +305,89 @@ export class CiudadanosService {
     };
 
     return response;
+  }
+
+  //HELPERS DE MAPEADO
+  /**
+   * Mapea un ciudadano a la respuesta base
+   */
+  private mapCiudadanoToBaseResponse(ciudadano: Ciudadanos): any {
+    return {
+      id: ciudadano.id,
+      name: ciudadano.name,
+      last_name_father: ciudadano.last_name_father,
+      last_name_mother: ciudadano.last_name_mother,
+      comment: ciudadano.comment,
+      birth_date: formatDateOnly(ciudadano.birth_date),
+      age: calculateAge(ciudadano.birth_date),
+      phone: ciudadano.phone,
+      marital_status: ciudadano.marital_status,
+    };
+  }
+
+  /**
+   * Mapea información de la pareja
+   */
+  private mapPartnerInfo(partner: Ciudadanos | null): any {
+    if (!partner) return null;
+    
+    return {
+      id: partner.id,
+      name: partner.name,
+      last_name_father: partner.last_name_father,
+      last_name_mother: partner.last_name_mother,
+    };
+  }
+
+  /**
+   * Mapea información de servicios
+   */
+  private mapServicesInfo(services: any[]): any[] {
+    return services?.map((s) => ({
+      id: s.id,
+      service_name: s.catalogoServicio?.service_name || 'Sin nombre',
+      start_date: s.start_date,
+      end_date: s.end_date,
+      service_status: s.service_status,
+      observations: s.observations,
+    })) || [];
+  }
+
+  /**
+   * Construye el nombre completo
+   */
+  private buildFullName(name: string, lastName1: string, lastName2?: string): string {
+    return `${name} ${lastName1} ${lastName2 || ''}`.trim();
+  }
+
+  /**
+   * Sanitiza y valida query de búsqueda
+   */
+  private sanitizeSearchQuery(query: string): string | null {
+    if (!query?.trim() || query.trim().length < 2) {
+      return null;
+    }
+    
+    // Escapar caracteres especiales de LIKE
+    return query.trim().replace(/[%_]/g, '\\$&');
+  }
+
+  /**
+   * Mapea ciudadano completo con todas las relaciones
+   */
+  private mapCiudadanoToFullResponse(
+    ciudadano: Ciudadanos, 
+    includeDeleted: boolean = false
+  ): CiudadanoListResponse {
+    return {
+      ...this.mapCiudadanoToBaseResponse(ciudadano),
+      partner: this.mapPartnerInfo(ciudadano.partner),
+      services: this.mapServicesInfo(ciudadano.services),
+      candidatoACargo: null,
+      ...(includeDeleted && {
+        visible: !ciudadano.deleted_at,
+        deleted_at: ciudadano.deleted_at,
+      }),
+    };
   }
 }
