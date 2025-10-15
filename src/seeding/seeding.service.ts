@@ -24,22 +24,22 @@ export class SeedingService implements OnModuleInit {
     },
     3: { 
       name: 'TERCER ORDEN', 
-      required_points: 30, 
+      required_points: 40, 
       puntos_por_servicio: 10 
     },
     4: { 
       name: 'CUARTO ORDEN', 
-      required_points: 40, 
+      required_points: 60, 
       puntos_por_servicio: 10
     },
     5: { 
       name: 'QUINTO ORDEN', 
-      required_points: 50, 
-      puntos_por_servicio: 40 
+      required_points: 80, 
+      puntos_por_servicio: 10 
     },
     6: { 
       name: 'SEXTO ORDEN', 
-      required_points: 60, 
+      required_points: 100, 
       puntos_por_servicio: 10 
     }
   };
